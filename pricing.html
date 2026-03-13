@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadAI — Pricing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #04090F;
+      --surface: #0C1520;
+      --surface2: #111D2B;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.16);
+      --accent: #00E5A0;
+      --accent-dim: rgba(0,229,160,0.1);
+      --accent-glow: rgba(0,229,160,0.22);
+      --text: #F0EEE8;
+      --muted: rgba(240,238,232,0.45);
+      --muted2: rgba(240,238,232,0.22);
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -15%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse, rgba(0,229,160,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 3rem;
+      border-bottom: 0.5px solid var(--border);
+      background: rgba(4,9,15,0.85);
+      backdrop-filter: blur(20px);
+    }
+
+    .logo { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem;
+      letter-spacing: -0.02em; color: var(--text); text-decoration: none; }
+    .logo span { color: var(--accent); }
+
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--accent); color: #04090F;
+      font-family: var(--font-body); font-weight: 500; font-size: 0.85rem;
+      padding: 0.55rem 1.25rem; border-radius: 6px; border: none;
+      text-decoration: none; cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.88; }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; z-index: 1;
+      padding: 9rem 2rem 5rem;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--accent-dim);
+      border: 0.5px solid rgba(0,229,160,0.25);
+      color: var(--accent);
+      font-size: 0.72rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.3rem 1rem; border-radius: 100px;
+      margin-bottom: 1.75rem;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .eyebrow-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+
+    h1 {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      letter-spacing: -0.03em; line-height: 1.08;
+      max-width: 16ch; margin: 0 auto 1.25rem;
+      animation: fadeUp 0.5s 0.08s ease both;
+    }
+
+    h1 em { font-style: normal; color: var(--accent); }
+
+    .hero-sub {
+      color: var(--muted); font-weight: 300; font-size: 1.05rem;
+      max-width: 46ch; margin: 0 auto;
+      animation: fadeUp 0.5s 0.16s ease both;
+    }
+
+    /* ── Toggle ── */
+    .billing-toggle {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.85rem; margin: 2.5rem auto 0;
+      animation: fadeUp 0.5s 0.22s ease both;
+    }
+
+    .toggle-label { font-size: 0.875rem; color: var(--muted); }
+    .toggle-label.active { color: var(--text); font-weight: 500; }
+
+    .toggle-switch {
+      position: relative; width: 44px; height: 24px;
+      background: var(--surface2); border: 0.5px solid var(--border);
+      border-radius: 100px; cursor: pointer; transition: background 0.2s;
+    }
+
+    .toggle-switch.annual { background: var(--accent-dim); border-color: rgba(0,229,160,0.3); }
+
+    .toggle-knob {
+      position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--muted); transition: transform 0.25s, background 0.2s;
+    }
+
+    .toggle-switch.annual .toggle-knob { transform: translateX(20px); background: var(--accent); }
+
+    .save-badge {
+      background: rgba(255,180,0,0.12); border: 0.5px solid rgba(255,180,0,0.3);
+      color: #FFB400; font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.2rem 0.65rem; border-radius: 100px;
+    }
+
+    /* ── Pricing grid ── */
+    .pricing-section {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto;
+      padding: 3rem 2rem 6rem;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    .plan-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.2s;
+      position: relative;
+    }
+
+    .plan-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
+
+    .plan-card.featured {
+      border-color: rgba(0,229,160,0.35);
+      box-shadow: 0 0 40px rgba(0,229,160,0.08);
+      transform: translateY(-8px);
+    }
+
+    .plan-card.featured:hover { transform: translateY(-11px); }
+
+    .featured-badge {
+      background: var(--accent); color: #04090F;
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      text-align: center; padding: 0.45rem;
+    }
+
+    .plan-header { padding: 1.75rem 1.75rem 1.25rem; }
+
+    .plan-name {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 1rem; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .plan-price {
+      display: flex; align-items: baseline; gap: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .price-dollar { font-size: 1.2rem; font-weight: 500; color: var(--muted); margin-top: 6px; }
+
+    .price-amount {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: 3.5rem; letter-spacing: -0.04em; color: var(--text);
+      transition: color 0.2s;
+    }
+
+    .plan-card.featured .price-amount { color: var(--accent); }
+
+    .price-period { font-size: 0.85rem; color: var(--muted); }
+
+    .price-annual { font-size: 0.78rem; color: var(--muted2); margin-bottom: 1rem; min-height: 1.2rem; }
+
+    .plan-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.5; }
+
+    .plan-divider { height: 0.5px; background: var(--border); margin: 0 1.75rem; }
+
+    .plan-features { padding: 1.25rem 1.75rem 1.75rem; display: flex; flex-direction: column; gap: 0.7rem; }
+
+    .feature-item {
+      display: flex; align-items: flex-start; gap: 0.65rem;
+      font-size: 0.875rem; color: var(--muted);
+    }
+
+    .feature-check {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent-dim); border: 0.5px solid rgba(0,229,160,0.3);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+      font-size: 9px; color: var(--accent);
+    }
+
+    .feature-item.highlight { color: var(--text); }
+
+    .plan-btn {
+      display: block; width: calc(100% - 3.5rem);
+      margin: 0 1.75rem 1.75rem;
+      padding: 0.85rem; border-radius: 10px;
+      font-family: var(--font-body); font-weight: 500; font-size: 0.95rem;
+      text-align: center; cursor: pointer;
+      text-decoration: none; transition: all 0.2s;
+      border: none;
+    }
+
+    .plan-btn.outline {
+      background: transparent;
+      border: 0.5px solid var(--border);
+      color: var(--muted);
+    }
+    .plan-btn.outline:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .plan-btn.primary {
+      background: var(--accent); color: #04090F;
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+    .plan-btn.primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── Social proof ── */
+    .social-proof {
+      position: relative; z-index: 1;
+      max-width: 900px; margin: 0 auto;
+      padding: 0 2rem 5rem;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    .proof-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 12px; padding: 1.25rem;
+    }
+
+    .proof-stars { color: #FFB400; font-size: 0.8rem; margin-bottom: 0.65rem; }
+
+    .proof-text { font-size: 0.875rem; color: var(--muted); line-height: 1.55; margin-bottom: 0.85rem; font-style: italic; }
+
+    .proof-author { display: flex; align-items: center; gap: 0.6rem; }
+
+    .proof-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent-dim);
+      border: 0.5px solid rgba(0,229,160,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 500; color: var(--accent);
+    }
+
+    .proof-name { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+    .proof-role { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── Waitlist section ── */
+    .waitlist-section {
+      position: relative; z-index: 1;
+      max-width: 620px; margin: 0 auto;
+      padding: 0 2rem 8rem;
+      text-align: center;
+      animation: fadeUp 0.6s 0.5s ease both;
+    }
+
+    .waitlist-card {
+      background: var(--surface);
+      border: 0.5px solid rgba(0,229,160,0.2);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .waitlist-card::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 200px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .waitlist-title {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: 1.8rem; letter-spacing: -0.03em;
+      margin-bottom: 0.65rem;
+    }
+
+    .waitlist-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    .waitlist-perks {
+      display: flex; flex-direction: column; gap: 0.6rem;
+      margin-bottom: 2rem; text-align: left;
+    }
+
+    .perk-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      font-size: 0.875rem; color: var(--muted);
+    }
+
+    .perk-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--accent-dim); border: 0.5px solid rgba(0,229,160,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0;
+    }
+
+    .waitlist-form { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    .wl-input {
+      width: 100%; background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
+      padding: 0.8rem 1rem; outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .wl-input::placeholder { color: var(--muted2); }
+    .wl-input:focus { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.04); }
+
+    .wl-select {
+      width: 100%; background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
+      padding: 0.8rem 1rem; outline: none; cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(240,238,232,0.4)' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 1rem center;
+      padding-right: 2.5rem;
+    }
+    .wl-select option { background: #0C1520; }
+
+    .btn-join {
+      width: 100%; background: var(--accent); color: #04090F;
+      font-family: var(--font-body); font-weight: 500; font-size: 1rem;
+      padding: 1rem; border-radius: 10px; border: none; cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 0 28px var(--accent-glow);
+    }
+    .btn-join:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-join:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+    .waitlist-note { font-size: 0.75rem; color: var(--muted2); margin-top: 0.75rem; }
+
+    /* Counter */
+    .counter-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.5rem; margin-bottom: 1.75rem;
+    }
+    .counter-avatars { display: flex; }
+    .counter-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-dim); border: 2px solid var(--bg);
+      margin-left: -6px; font-size: 0.6rem; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; color: var(--accent);
+    }
+    .counter-avatar:first-child { margin-left: 0; }
+    .counter-text { font-size: 0.8rem; color: var(--muted); }
+    .counter-text strong { color: var(--text); }
+
+    /* Success state */
+    .success-state {
+      display: none; flex-direction: column; align-items: center;
+      gap: 1rem; padding: 1rem 0;
+    }
+    .success-state.visible { display: flex; animation: fadeUp 0.4s ease both; }
+
+    .success-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--accent-dim); border: 0.5px solid rgba(0,229,160,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.75rem;
+    }
+
+    .success-title {
+      font-family: var(--font-display); font-weight: 800; font-size: 1.5rem;
+    }
+
+    .success-sub { color: var(--muted); font-size: 0.9rem; }
+
+    .success-position {
+      background: rgba(0,229,160,0.1); border: 0.5px solid rgba(0,229,160,0.25);
+      border-radius: 8px; padding: 0.65rem 1.25rem;
+      font-size: 0.875rem; color: var(--accent);
+    }
+
+    /* FAQ */
+    .faq-section {
+      position: relative; z-index: 1;
+      max-width: 680px; margin: 0 auto;
+      padding: 0 2rem 8rem;
+      animation: fadeUp 0.6s 0.6s ease both;
+    }
+
+    .faq-title {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: 1.6rem; letter-spacing: -0.02em;
+      text-align: center; margin-bottom: 2rem;
+    }
+
+    .faq-item {
+      border-bottom: 0.5px solid var(--border);
+      overflow: hidden;
+    }
+
+    .faq-q {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 0; cursor: pointer;
+      font-weight: 500; font-size: 0.95rem; color: var(--text);
+      transition: color 0.2s;
+      user-select: none;
+    }
+
+    .faq-q:hover { color: var(--accent); }
+
+    .faq-icon {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--surface2); border: 0.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0; transition: transform 0.2s, background 0.2s;
+      color: var(--muted);
+    }
+
+    .faq-item.open .faq-icon { transform: rotate(45deg); background: var(--accent-dim); color: var(--accent); }
+
+    .faq-a {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+    }
+
+    .faq-item.open .faq-a { max-height: 200px; }
+
+    .faq-a-inner { padding: 0 0 1.1rem; font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
+
+    /* Footer */
+    footer {
+      position: relative; z-index: 1;
+      text-align: center; padding: 2rem;
+      color: var(--muted2); font-size: 0.8rem;
+      border-top: 0.5px solid var(--border);
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    @media (max-width: 860px) {
+      .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+      .plan-card.featured { transform: none; }
+      .social-proof { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">Lead<span>AI</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="script-generator.html">Try it free</a></li>
+    <li><a href="#waitlist">Join waitlist</a></li>
+  </ul>
+  <a href="#waitlist" class="nav-cta">Join Waitlist</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="eyebrow"><div class="eyebrow-dot"></div> Beta launching soon</div>
+  <h1>Simple pricing.<br>Real <em>results.</em></h1>
+  <p class="hero-sub">Start generating lead videos in seconds. Cancel anytime. No contracts.</p>
+
+  <div class="billing-toggle">
+    <span class="toggle-label active" id="monthlyLabel">Monthly</span>
+    <div class="toggle-switch" id="billingToggle" onclick="toggleBilling()">
+      <div class="toggle-knob"></div>
+    </div>
+    <span class="toggle-label" id="annualLabel">Annual</span>
+    <span class="save-badge">Save 30%</span>
+  </div>
+</section>
+
+<!-- Pricing Cards -->
+<section class="pricing-section">
+  <div class="pricing-grid">
+
+    <!-- Starter -->
+    <div class="plan-card">
+      <div class="plan-header">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">
+          <span class="price-dollar">$</span>
+          <span class="price-amount" id="price-starter">19</span>
+          <span class="price-period">/mo</span>
+        </div>
+        <div class="price-annual" id="annual-starter"></div>
+        <div class="plan-desc">Perfect for solo agents and coaches just getting started with video marketing.</div>
+      </div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="feature-item highlight"><div class="feature-check">✓</div> 10 AI videos per month</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> AI script generator</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> AI voiceover (ElevenLabs)</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Caption video export</div>
+        <div class="feature-item"><div class="feature-check">✓</div> 1 platform (Instagram or TikTok)</div>
+        <div class="feature-item"><div class="feature-check">✓</div> Email support</div>
+      </div>
+      <a href="#waitlist" class="plan-btn outline">Join waitlist</a>
+    </div>
+
+    <!-- Pro (featured) -->
+    <div class="plan-card featured">
+      <div class="featured-badge">Most popular</div>
+      <div class="plan-header">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">
+          <span class="price-dollar">$</span>
+          <span class="price-amount" id="price-pro">49</span>
+          <span class="price-period">/mo</span>
+        </div>
+        <div class="price-annual" id="annual-pro"></div>
+        <div class="plan-desc">For real estate agents and businesses serious about lead generation at scale.</div>
+      </div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="feature-item highlight"><div class="feature-check">✓</div> 50 AI videos per month</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Everything in Starter</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> 3 platforms (Instagram, TikTok, YouTube)</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Auto-scheduling (Buffer integration)</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Lead capture page per video</div>
+        <div class="feature-item"><div class="feature-check">✓</div> Priority support</div>
+        <div class="feature-item"><div class="feature-check">✓</div> Analytics dashboard</div>
+      </div>
+      <a href="#waitlist" class="plan-btn primary">Join waitlist</a>
+    </div>
+
+    <!-- Agency -->
+    <div class="plan-card">
+      <div class="plan-header">
+        <div class="plan-name">Agency</div>
+        <div class="plan-price">
+          <span class="price-dollar">$</span>
+          <span class="price-amount" id="price-agency">99</span>
+          <span class="price-period">/mo</span>
+        </div>
+        <div class="price-annual" id="annual-agency"></div>
+        <div class="plan-desc">For agencies managing multiple clients and brands across all platforms.</div>
+      </div>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Unlimited videos</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Everything in Pro</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Up to 10 client accounts</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> White-label option</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> n8n automation workflows</div>
+        <div class="feature-item"><div class="feature-check">✓</div> 1-on-1 onboarding call</div>
+        <div class="feature-item"><div class="feature-check">✓</div> Custom integrations</div>
+      </div>
+      <a href="#waitlist" class="plan-btn outline">Join waitlist</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- Social proof -->
+<div class="social-proof">
+  <div class="proof-card">
+    <div class="proof-stars">★★★★★</div>
+    <div class="proof-text">"I went from posting once a week to every day. My Dubai listings are getting 10x more DMs."</div>
+    <div class="proof-author">
+      <div class="proof-avatar">SA</div>
+      <div><div class="proof-name">Sara Al Mansouri</div><div class="proof-role">Real Estate Agent, Dubai</div></div>
+    </div>
+  </div>
+  <div class="proof-card">
+    <div class="proof-stars">★★★★★</div>
+    <div class="proof-text">"My clients ask how I make so many videos. I just don't tell them it takes 30 seconds."</div>
+    <div class="proof-author">
+      <div class="proof-avatar">MK</div>
+      <div><div class="proof-name">Mike Karim</div><div class="proof-role">Mortgage Broker, London</div></div>
+    </div>
+  </div>
+  <div class="proof-card">
+    <div class="proof-stars">★★★★★</div>
+    <div class="proof-text">"LeadAI replaced my entire content team. Closed 3 new gym memberships from one TikTok."</div>
+    <div class="proof-author">
+      <div class="proof-avatar">JP</div>
+      <div><div class="proof-name">James Park</div><div class="proof-role">Gym Owner, Sydney</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Waitlist -->
+<section class="waitlist-section" id="waitlist">
+  <div class="waitlist-card">
+
+    <div class="counter-row">
+      <div class="counter-avatars">
+        <div class="counter-avatar">SA</div>
+        <div class="counter-avatar">MK</div>
+        <div class="counter-avatar">JP</div>
+        <div class="counter-avatar">+</div>
+      </div>
+      <div class="counter-text"><strong id="waitlistCount">47</strong> people already on the waitlist</div>
+    </div>
+
+    <div class="waitlist-title">Get Early Access</div>
+    <div class="waitlist-sub">Beta users get 60 days free + locked-in pricing forever.</div>
+
+    <div class="waitlist-perks">
+      <div class="perk-item"><div class="perk-icon">🎁</div> 60 days completely free — no credit card needed</div>
+      <div class="perk-item"><div class="perk-icon">🔒</div> Lock in today's price forever, even after we raise it</div>
+      <div class="perk-item"><div class="perk-icon">⚡</div> First access when we launch — ahead of the queue</div>
+      <div class="perk-item"><div class="perk-icon">🎙</div> 1-on-1 onboarding call with the founder</div>
+    </div>
+
+    <!-- Form (shown by default) -->
+    <div id="waitlistForm">
+      <div class="waitlist-form">
+        <div class="form-row">
+          <input class="wl-input" type="text" id="wlName" placeholder="Your name" />
+          <input class="wl-input" type="email" id="wlEmail" placeholder="Email address" />
+        </div>
+        <input class="wl-input" type="text" id="wlBusiness" placeholder="Business name (e.g. Dubai Realty Co.)" />
+        <select class="wl-select" id="wlType">
+          <option value="" disabled selected>What type of business are you?</option>
+          <option value="real_estate">Real Estate Agent</option>
+          <option value="mortgage">Mortgage Broker</option>
+          <option value="gym">Gym / Fitness</option>
+          <option value="consultant">Consultant / Coach</option>
+          <option value="agency">Marketing Agency</option>
+          <option value="ecommerce">E-commerce</option>
+          <option value="other">Other</option>
+        </select>
+        <select class="wl-select" id="wlPlan">
+          <option value="" disabled selected>Which plan interests you?</option>
+          <option value="starter">Starter — $19/mo</option>
+          <option value="pro">Pro — $49/mo (most popular)</option>
+          <option value="agency">Agency — $99/mo</option>
+        </select>
+        <button class="btn-join" id="joinBtn" onclick="joinWaitlist()">
+          ✦ Secure My Spot
+        </button>
+      </div>
+      <div class="waitlist-note">No spam. No credit card. Just early access when we launch.</div>
+    </div>
+
+    <!-- Success state -->
+    <div class="success-state" id="successState">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">You're on the list!</div>
+      <div class="success-sub">We'll email you the moment beta opens.</div>
+      <div class="success-position" id="successPosition">You're #48 on the waitlist</div>
+      <div class="waitlist-note" style="margin-top:0.5rem;">Share with a friend to move up the queue ↗</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="faq-title">Questions? Answered.</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Do I need any video editing skills?
+      <div class="faq-icon">+</div>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner">None at all. You type your topic, click Generate, and LeadAI creates the script, voice, and video automatically. If you can type a text message, you can use LeadAI.</div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      What platforms does LeadAI post to?
+      <div class="faq-icon">+</div>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner">Starter supports 1 platform. Pro supports Instagram, TikTok, and YouTube. Agency supports all platforms plus scheduling and automation via n8n workflows.</div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      How is this different from other AI video tools?
+      <div class="faq-icon">+</div>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner">Most tools make pretty videos. LeadAI makes lead-generating videos — optimised for real estate, mortgage, fitness, and coaching businesses that need actual customers, not just views.</div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Can I cancel anytime?
+      <div class="faq-icon">+</div>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner">Yes. No contracts, no cancellation fees. Cancel in one click from your dashboard. Beta users keep their locked-in price for as long as they stay subscribed.</div></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      When does beta launch?
+      <div class="faq-icon">+</div>
+    </div>
+    <div class="faq-a"><div class="faq-a-inner">We're targeting a launch within the next few weeks. Waitlist members get notified first and receive 60 days free access before billing starts.</div></div>
+  </div>
+
+</section>
+
+<footer>
+  &copy; 2026 LeadAI. All rights reserved. &nbsp;·&nbsp;
+  <a href="index.html" style="color:inherit;">Home</a> &nbsp;·&nbsp;
+  <a href="script-generator.html" style="color:inherit;">Try it free</a>
+</footer>
+
+<script>
+  // ── Billing toggle ──
+  var isAnnual = false;
+  var prices = { starter: 19, pro: 49, agency: 99 };
+
+  function toggleBilling() {
+    isAnnual = !isAnnual;
+    var toggle = document.getElementById('billingToggle');
+    toggle.classList.toggle('annual', isAnnual);
+    document.getElementById('monthlyLabel').classList.toggle('active', !isAnnual);
+    document.getElementById('annualLabel').classList.toggle('active', isAnnual);
+
+    ['starter','pro','agency'].forEach(function(plan) {
+      var monthly = prices[plan];
+      var annual  = Math.round(monthly * 0.7);
+      document.getElementById('price-' + plan).textContent = isAnnual ? annual : monthly;
+      document.getElementById('annual-' + plan).textContent = isAnnual
+        ? 'Billed $' + (annual * 12) + '/year — save $' + ((monthly - annual) * 12)
+        : '';
+    });
+  }
+
+  // ── Waitlist ──
+  var waitlistCount = 47;
+
+  function joinWaitlist() {
+    var name     = document.getElementById('wlName').value.trim();
+    var email    = document.getElementById('wlEmail').value.trim();
+    var business = document.getElementById('wlBusiness').value.trim();
+    var type     = document.getElementById('wlType').value;
+    var plan     = document.getElementById('wlPlan').value;
+
+    if (!name)  { highlight('wlName',  'Please enter your name'); return; }
+    if (!email || !email.includes('@')) { highlight('wlEmail', 'Please enter a valid email'); return; }
+    if (!type)  { highlight('wlType',  'Please select your business type'); return; }
+
+    var btn = document.getElementById('joinBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Saving your spot…';
+
+    // Save to localStorage so signups persist in the browser
+    var signups = JSON.parse(localStorage.getItem('leadai_waitlist') || '[]');
+    signups.push({ name: name, email: email, business: business, type: type, plan: plan, date: new Date().toISOString() });
+    localStorage.setItem('leadai_waitlist', JSON.stringify(signups));
+
+    waitlistCount++;
+    document.getElementById('waitlistCount').textContent = waitlistCount;
+
+    // Simulate a brief delay then show success
+    setTimeout(function() {
+      document.getElementById('waitlistForm').style.display = 'none';
+      var pos = document.getElementById('successPosition');
+      pos.textContent = "You're #" + waitlistCount + " on the waitlist";
+      document.getElementById('successState').classList.add('visible');
+    }, 1000);
+  }
+
+  function highlight(id, msg) {
+    var el = document.getElementById(id);
+    el.style.borderColor = 'rgba(255,80,80,0.6)';
+    el.placeholder = msg;
+    el.focus();
+    setTimeout(function() {
+      el.style.borderColor = '';
+    }, 2000);
+  }
+
+  // ── FAQ toggle ──
+  function toggleFaq(el) {
+    var item = el.parentElement;
+    var isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(function(i) { i.classList.remove('open'); });
+    if (!isOpen) item.classList.add('open');
+  }
+</script>
+</body>
+</html>
