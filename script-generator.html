@@ -657,6 +657,61 @@
       border-radius: 2px; transition: width 0.3s;
     }
 
+
+    /* ── Mode tabs ── */
+    .mode-tabs {
+      display: flex; gap: 0; margin-bottom: 1.5rem;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border);
+      border-radius: 10px; padding: 4px;
+    }
+    .mode-tab {
+      flex: 1; padding: 0.65rem 1rem;
+      border-radius: 8px; border: none;
+      font-family: var(--font-body); font-size: 0.875rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+      background: transparent; color: var(--muted);
+    }
+    .mode-tab.active {
+      background: var(--surface2);
+      color: var(--text);
+      border: 0.5px solid var(--border-hover);
+    }
+    .mode-tab:hover:not(.active) { color: var(--text); }
+
+    .paste-panel { display: none; }
+    .paste-panel.visible { display: block; }
+    .ai-panel { display: block; }
+    .ai-panel.hidden { display: none; }
+
+    .paste-textarea {
+      width: 100%; min-height: 220px;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: var(--font-body);
+      font-size: 0.95rem; line-height: 1.7;
+      padding: 1rem; outline: none; resize: vertical;
+      transition: border-color 0.2s;
+    }
+    .paste-textarea::placeholder { color: var(--muted2); }
+    .paste-textarea:focus { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.03); }
+
+    .paste-hint {
+      font-size: 0.78rem; color: var(--muted2);
+      margin-top: 0.5rem; line-height: 1.5;
+    }
+    .btn-use-script {
+      width: 100%; margin-top: 1rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      background: var(--accent-dim);
+      border: 0.5px solid rgba(0,229,160,0.3);
+      color: var(--accent);
+      font-family: var(--font-body); font-weight: 500; font-size: 1rem;
+      padding: 0.9rem; border-radius: 10px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-use-script:hover { background: rgba(0,229,160,0.18); }
+
   </style>
 </head>
 <body>
@@ -673,8 +728,16 @@
 
   <!-- Input Card -->
   <div class="card">
-    <div class="card-title"><div class="card-title-dot"></div> Video Details</div>
 
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabAI" onclick="switchMode('ai')">✦ AI Generate Script</button>
+      <button class="mode-tab" id="tabPaste" onclick="switchMode('paste')">✎ Paste My Own Script</button>
+    </div>
+
+    <!-- AI generate panel -->
+    <div class="ai-panel" id="aiPanel">
+    <div class="card-title"><div class="card-title-dot"></div> Video Details</div>
     <div class="form-grid">
       <div class="form-group full">
         <label for="topic">Topic / Product</label>
@@ -726,6 +789,37 @@
     </button>
 
     <div class="error-box" id="errorBox"></div>
+    </div><!-- end ai-panel -->
+
+    <!-- Paste own script panel -->
+    <div class="paste-panel" id="pastePanel">
+      <div class="card-title"><div class="card-title-dot"></div> Your Script</div>
+      <textarea
+        class="paste-textarea"
+        id="pasteScript"
+        placeholder="Paste your script here...
+
+Example:
+[HOOK]
+Did you know Dubai has apartments under $500K with incredible ROI?
+
+[BODY]
+Here are the top 3 reasons investors are choosing Dubai right now.
+No property tax — ever.
+5-8% rental yields.
+100% foreign ownership in freehold areas.
+
+[CTA]
+Book a free consultation at leadai.guru"
+      ></textarea>
+      <div class="paste-hint">
+        💡 Tip: Use [HOOK], [BODY], [CTA] tags so the voice and video sections know where each part starts. Or just paste plain text — it works either way.
+      </div>
+      <button class="btn-use-script" onclick="useOwnScript()">
+        ✓ Use This Script → Generate Voice &amp; Video
+      </button>
+    </div><!-- end paste-panel -->
+
   </div>
 
   <!-- Output Card -->
@@ -1404,6 +1498,76 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     }
   }
   loadVoices();
+
+
+  // ── Mode switching ──
+  function switchMode(mode) {
+    var aiPanel    = document.getElementById('aiPanel');
+    var pastePanel = document.getElementById('pastePanel');
+    var tabAI      = document.getElementById('tabAI');
+    var tabPaste   = document.getElementById('tabPaste');
+
+    if (mode === 'ai') {
+      aiPanel.classList.remove('hidden');
+      pastePanel.classList.remove('visible');
+      tabAI.classList.add('active');
+      tabPaste.classList.remove('active');
+    } else {
+      aiPanel.classList.add('hidden');
+      pastePanel.classList.add('visible');
+      tabAI.classList.remove('active');
+      tabPaste.classList.add('active');
+    }
+  }
+
+  function useOwnScript() {
+    var text = document.getElementById('pasteScript').value.trim();
+    if (!text) {
+      var ta = document.getElementById('pasteScript');
+      ta.style.borderColor = 'rgba(255,80,80,0.5)';
+      ta.placeholder = 'Please paste your script first...';
+      setTimeout(function() { ta.style.borderColor = ''; }, 2000);
+      return;
+    }
+
+    // Store as lastScript so voice + video use it
+    lastScript = text;
+
+    // Show a clean output card with the pasted script
+    var outputCard = document.getElementById('outputCard');
+    outputCard.classList.add('visible');
+    document.getElementById('skeleton').style.display = 'none';
+
+    // Render it
+    var body = document.getElementById('outputBody');
+    // Try to parse [TAGS] — if none found, just show plain text
+    var hasTags = text.match(/\[HOOK\]|\[BODY\]|\[CTA\]|\[CAPTION\]|\[HASHTAGS\]/i);
+    if (hasTags) {
+      renderScript(text);
+    } else {
+      body.innerHTML = '<div class="script-section"><div class="section-tag body">Your Script</div><div class="section-text">' + escapeHtml(text) + '</div></div>';
+      body.style.display = 'block';
+    }
+
+    document.getElementById('statusDot').classList.remove('loading');
+    document.getElementById('statusLabel').textContent = 'Script ready';
+
+    // Show stats
+    var words = text.split(/\s+/).filter(Boolean).length;
+    var estSec = Math.round((words / 140) * 60);
+    document.getElementById('statWords').textContent = words;
+    document.getElementById('statTime').textContent = estSec + 's';
+    document.getElementById('statSections').textContent = (text.match(/\[/g) || []).length || 1;
+    var statsRow = document.getElementById('statsRow');
+    statsRow.style.display = 'grid';
+
+    // Show voice + video cards
+    document.getElementById('voiceCard').classList.add('visible');
+    document.getElementById('videoCard').classList.add('visible');
+
+    // Scroll to output
+    outputCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
 </script>
 </body>
