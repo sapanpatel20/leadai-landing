@@ -792,23 +792,38 @@
 
     var btn = document.getElementById('joinBtn');
     btn.disabled = true;
-    btn.textContent = '⏳ Saving your spot…';
+    btn.textContent = '⏳ Securing your spot…';
 
-    // Save to localStorage so signups persist in the browser
-    var signups = JSON.parse(localStorage.getItem('leadai_waitlist') || '[]');
-    signups.push({ name: name, email: email, business: business, type: type, plan: plan, date: new Date().toISOString() });
-    localStorage.setItem('leadai_waitlist', JSON.stringify(signups));
+    fetch('/api/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, email: email, business: business, type: type, plan: plan })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
 
-    waitlistCount++;
-    document.getElementById('waitlistCount').textContent = waitlistCount;
+      var position = data.position || (waitlistCount + 1);
+      document.getElementById('waitlistCount').textContent = position;
 
-    // Simulate a brief delay then show success
-    setTimeout(function() {
       document.getElementById('waitlistForm').style.display = 'none';
       var pos = document.getElementById('successPosition');
-      pos.textContent = "You're #" + waitlistCount + " on the waitlist";
+      if (data.duplicate) {
+        pos.textContent = "You're already on the waitlist 🎉";
+      } else {
+        pos.textContent = "You're #" + position + " on the waitlist";
+      }
       document.getElementById('successState').classList.add('visible');
-    }, 1000);
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '✦ Secure My Spot';
+      var emailEl = document.getElementById('wlEmail');
+      emailEl.style.borderColor = 'rgba(255,80,80,0.6)';
+      emailEl.placeholder = 'Something went wrong — try again';
+      setTimeout(function() { emailEl.style.borderColor = ''; }, 3000);
+      console.error('Waitlist error:', err.message);
+    });
   }
 
   function highlight(id, msg) {
