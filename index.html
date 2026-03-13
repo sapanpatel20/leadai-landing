@@ -3,431 +3,844 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LeadAI &mdash; AI Video Generator for Lead Generation</title>
-  <meta name="description" content="Turn any topic into a lead-generating short video in 30 seconds." />
+  <title>LeadAI &mdash; Turn Any Topic Into a Lead-Generating Video in 30 Seconds</title>
+  <meta name="description" content="AI-powered video generator for real estate agents, gyms, mortgage brokers and coaches. Script + voice + caption video in 30 seconds." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #04090F; --surface: #0C1520; --surface2: #111D2B;
-      --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.15);
-      --accent: #00E5A0; --accent-dim: rgba(0,229,160,0.12);
-      --text: #F0EEE8; --muted: rgba(240,238,232,0.5); --muted2: rgba(240,238,232,0.3);
-      --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+      --bg:        #060A12;
+      --bg2:       #0A1120;
+      --surface:   #0E1828;
+      --surface2:  #14213A;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.12);
+      --green:     #00E5A0;
+      --green-dim: rgba(0,229,160,0.10);
+      --green-glow:rgba(0,229,160,0.20);
+      --amber:     #FFB547;
+      --amber-dim: rgba(255,181,71,0.10);
+      --red-soft:  rgba(255,90,90,0.9);
+      --text:      #EDF0F7;
+      --muted:     rgba(237,240,247,0.50);
+      --muted2:    rgba(237,240,247,0.28);
+      --display:   'Syne', sans-serif;
+      --body:      'Instrument Sans', sans-serif;
+      --radius:    16px;
     }
+
     html { scroll-behavior: smooth; }
-    body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
-    body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: 0.35; }
-    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 3rem; border-bottom: 0.5px solid var(--border); background: rgba(4,9,15,0.85); backdrop-filter: blur(16px); }
-    .logo { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; color: var(--text); text-decoration: none; }
-    .logo span { color: var(--accent); }
-    .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
-    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
-    .nav-links a:hover { color: var(--text); }
-    .nav-cta { background: var(--accent) !important; color: #04090F !important; font-weight: 600 !important; padding: 0.5rem 1.25rem !important; border-radius: 8px; }
-    .hero { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 9rem 2rem 5rem; }
-    .hero-glow { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 900px; height: 500px; background: radial-gradient(ellipse at center top, rgba(0,229,160,0.09) 0%, transparent 65%); pointer-events: none; }
-    .badge { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--accent-dim); border: 0.5px solid rgba(0,229,160,0.3); color: var(--accent); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.35rem 1rem; border-radius: 100px; margin-bottom: 2rem; animation: fadeUp 0.5s ease both; }
-    .badge-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s ease infinite; }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }
-    h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.6rem, 6vw, 4.2rem); letter-spacing: -0.04em; line-height: 1.05; margin-bottom: 1.5rem; animation: fadeUp 0.6s 0.1s ease both; max-width: 16ch; }
-    h1 em { font-style: normal; color: var(--accent); }
-    .hero-sub { color: var(--muted); font-size: clamp(1rem, 2vw, 1.2rem); max-width: 48ch; line-height: 1.65; margin-bottom: 2.5rem; animation: fadeUp 0.6s 0.2s ease both; }
-    .hero-cta-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; animation: fadeUp 0.6s 0.3s ease both; }
-    .btn-primary { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--accent); color: #04090F; font-family: var(--font-body); font-weight: 600; font-size: 1rem; padding: 0.9rem 2rem; border-radius: 10px; text-decoration: none; box-shadow: 0 0 32px rgba(0,229,160,0.25); transition: all 0.2s; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 44px rgba(0,229,160,0.35); }
-    .btn-ghost { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--muted); font-size: 0.95rem; text-decoration: none; transition: color 0.2s; border: 0.5px solid var(--border); padding: 0.9rem 1.5rem; border-radius: 10px; }
-    .btn-ghost:hover { color: var(--text); border-color: var(--border-hover); }
-    .hero-trust { display: flex; align-items: center; gap: 1.5rem; margin-top: 3rem; animation: fadeUp 0.6s 0.4s ease both; flex-wrap: wrap; justify-content: center; }
-    .trust-item { font-size: 0.8rem; color: var(--muted2); }
-    .trust-dot { width: 4px; height: 4px; background: var(--border-hover); border-radius: 50%; }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-    .proof-bar { position: relative; z-index: 1; border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border); background: rgba(12,21,32,0.6); padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: center; gap: 3rem; flex-wrap: wrap; }
-    .proof-num { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; letter-spacing: -0.03em; color: var(--text); display: block; text-align: center; }
-    .proof-label { font-size: 0.78rem; color: var(--muted); text-align: center; }
-    .proof-div { width: 1px; height: 36px; background: var(--border); }
-    section { position: relative; z-index: 1; }
-    .section-inner { max-width: 960px; margin: 0 auto; padding: 5rem 2rem; }
-    .section-tag { display: inline-block; background: rgba(0,229,160,0.1); border: 0.5px solid rgba(0,229,160,0.25); color: var(--accent); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.3rem 1rem; border-radius: 100px; margin-bottom: 1.25rem; }
-    .section-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.8rem, 4vw, 2.8rem); letter-spacing: -0.03em; margin-bottom: 0.75rem; }
-    .demo-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; overflow: hidden; box-shadow: 0 0 80px rgba(0,229,160,0.07); }
-    .demo-bar { background: var(--surface2); border-bottom: 0.5px solid var(--border); padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
-    .demo-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .demo-url { flex: 1; background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.25rem 0.75rem; font-size: 0.72rem; color: var(--muted); margin: 0 0.75rem; }
-    .demo-video-area { position: relative; background: #000; aspect-ratio: 16/9; overflow: hidden; }
-    #demoCanvas { width: 100%; height: 100%; display: block; }
-    .demo-caption { padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
-    .demo-steps { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .demo-step { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--muted); }
-    .demo-step-num { width: 20px; height: 20px; background: var(--accent-dim); border: 0.5px solid rgba(0,229,160,0.3); border-radius: 50%; color: var(--accent); font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-    .how-grid, .features-grid, .testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; margin-top: 3rem; }
-    .how-card, .feature-card, .testi-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 16px; padding: 1.75rem; transition: border-color 0.2s; }
-    .how-card { position: relative; overflow: hidden; padding: 2rem 1.5rem; }
-    .how-card:hover, .feature-card:hover { border-color: var(--border-hover); }
-    .how-num { font-family: var(--font-display); font-weight: 800; font-size: 3.5rem; color: rgba(255,255,255,0.04); position: absolute; top: -0.5rem; right: 1rem; line-height: 1; }
-    .how-icon, .feature-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem; }
-    .how-title, .feature-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
-    .how-desc, .feature-desc { color: var(--muted); font-size: 0.875rem; line-height: 1.65; }
-    .how-time { margin-top: 1rem; font-size: 0.72rem; color: var(--accent); font-weight: 500; }
-    .examples-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; margin-top: 3rem; }
-    .example-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 16px; overflow: hidden; transition: border-color 0.2s, transform 0.2s; cursor: pointer; }
-    .example-card:hover { border-color: rgba(0,229,160,0.25); transform: translateY(-4px); }
-    .example-preview { position: relative; aspect-ratio: 9/16; background: #000; overflow: hidden; }
-    .example-canvas { width: 100%; height: 100%; display: block; }
-    .example-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); transition: opacity 0.2s; }
-    .example-card:hover .example-overlay { opacity: 0; }
-    .example-info { padding: 1rem 1.25rem; }
-    .example-industry { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 500; margin-bottom: 0.35rem; }
-    .example-title { font-weight: 600; font-size: 0.9rem; line-height: 1.4; margin-bottom: 0.5rem; }
-    .example-stats { display: flex; gap: 0.4rem; }
-    .example-stat { font-size: 0.65rem; padding: 0.2rem 0.55rem; border-radius: 4px; }
-    .testi-stars { color: #FFB400; margin-bottom: 0.85rem; }
-    .testi-quote { color: var(--muted); font-size: 0.9rem; line-height: 1.65; font-style: italic; margin-bottom: 1.25rem; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Grid lines bg */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 80px 80px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 3rem; height: 64px;
+      background: rgba(6,10,18,0.82);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px) saturate(1.4);
+    }
+    .nav-logo { font-family: var(--display); font-weight: 800; font-size: 1.2rem; color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo em { font-style: normal; color: var(--green); }
+    .nav-center { display: flex; align-items: center; gap: 2rem; list-style: none; }
+    .nav-center a { color: var(--muted); font-size: 0.875rem; text-decoration: none; transition: color .2s; font-weight: 500; }
+    .nav-center a:hover { color: var(--text); }
+    .nav-right { display: flex; align-items: center; gap: 0.75rem; }
+    .btn-nav-ghost { color: var(--muted); font-size: 0.875rem; text-decoration: none; font-weight: 500; padding: 0.45rem 1rem; border-radius: 8px; transition: color .2s; }
+    .btn-nav-ghost:hover { color: var(--text); }
+    .btn-nav-cta { background: var(--green); color: #060A12; font-weight: 700; font-size: 0.875rem; padding: 0.5rem 1.25rem; border-radius: 8px; text-decoration: none; transition: opacity .2s, transform .15s; letter-spacing: -0.01em; }
+    .btn-nav-cta:hover { opacity: .88; transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 2rem 80px;
+      overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
+      width: 1000px; height: 700px; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 30%, rgba(0,229,160,0.12) 0%, rgba(0,229,160,0.04) 40%, transparent 70%);
+    }
+    .hero-glow2 {
+      position: absolute; top: 20%; right: -10%;
+      width: 400px; height: 400px; pointer-events: none;
+      background: radial-gradient(ellipse, rgba(255,181,71,0.06) 0%, transparent 70%);
+    }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--green-dim); border: 1px solid rgba(0,229,160,0.22);
+      color: var(--green); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 0.3rem 1rem; border-radius: 100px;
+      margin-bottom: 2rem; animation: riseIn .6s ease both;
+    }
+    .pill-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+    .hero h1 {
+      font-family: var(--display); font-weight: 800;
+      font-size: clamp(2.8rem, 6.5vw, 5rem);
+      letter-spacing: -0.04em; line-height: 1.0;
+      margin-bottom: 1.5rem; max-width: 18ch;
+      animation: riseIn .7s .08s ease both;
+    }
+    .hero h1 mark {
+      background: none;
+      background: linear-gradient(135deg, var(--green) 0%, #00C87A 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.2rem);
+      max-width: 52ch; line-height: 1.7;
+      margin-bottom: 2.5rem; animation: riseIn .7s .16s ease both;
+    }
+    .hero-ctas {
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;
+      animation: riseIn .7s .24s ease both;
+    }
+    .btn-hero {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--green); color: #060A12;
+      font-family: var(--body); font-weight: 700; font-size: 1rem;
+      padding: 0.9rem 2.25rem; border-radius: 10px; text-decoration: none;
+      box-shadow: 0 0 0 0 var(--green-glow);
+      transition: transform .2s, box-shadow .2s;
+      letter-spacing: -0.01em;
+    }
+    .btn-hero:hover { transform: translateY(-3px); box-shadow: 0 12px 40px -8px rgba(0,229,160,0.4); }
+    .btn-hero-ghost {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: var(--muted); font-size: 0.95rem; text-decoration: none;
+      border: 1px solid var(--border2); padding: 0.9rem 1.75rem; border-radius: 10px;
+      transition: color .2s, border-color .2s;
+    }
+    .btn-hero-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.22); }
+
+    .hero-trust {
+      display: flex; align-items: center; gap: 1.5rem; margin-top: 2.5rem;
+      animation: riseIn .7s .32s ease both; flex-wrap: wrap; justify-content: center;
+    }
+    .trust-chip { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--muted2); }
+    .trust-chip strong { color: var(--muted); font-weight: 500; }
+    .trust-sep { width: 1px; height: 14px; background: var(--border2); }
+
+    /* Floating UI mockup */
+    .hero-mockup {
+      position: relative; z-index: 1;
+      margin-top: 4rem;
+      width: 100%; max-width: 860px;
+      animation: riseIn .8s .4s ease both;
+    }
+    .mockup-frame {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,229,160,0.06);
+    }
+    .mockup-topbar {
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-url {
+      flex: 1; background: rgba(255,255,255,0.05); border-radius: 5px;
+      padding: 0.22rem 0.75rem; font-size: 0.7rem; color: var(--muted); margin: 0 .75rem;
+    }
+    .mockup-canvas-area { aspect-ratio: 16/7; background: #000; overflow: hidden; }
+    #heroCanvas { width: 100%; height: 100%; display: block; }
+
+    @keyframes riseIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── TRUST BAR ── */
+    .trust-bar {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      background: rgba(14,24,40,0.5);
+      padding: 1.4rem 2rem;
+      display: flex; align-items: center; justify-content: center; gap: 3.5rem;
+      flex-wrap: wrap;
+    }
+    .trust-stat { text-align: center; }
+    .trust-stat-num {
+      font-family: var(--display); font-weight: 800; font-size: 2rem;
+      letter-spacing: -0.04em; color: var(--text); display: block; line-height: 1;
+    }
+    .trust-stat-num em { font-style: normal; color: var(--green); }
+    .trust-stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+    .trust-bar-div { width: 1px; height: 40px; background: var(--border2); }
+
+    /* ── SHARED SECTION ── */
+    .sec { position: relative; z-index: 1; }
+    .sec-inner { max-width: 1040px; margin: 0 auto; padding: 6rem 2rem; }
+    .sec-header { text-align: center; margin-bottom: 4rem; }
+    .sec-tag {
+      display: inline-block;
+      background: var(--green-dim); border: 1px solid rgba(0,229,160,0.18);
+      color: var(--green); font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.28rem 1rem; border-radius: 100px; margin-bottom: 1.25rem;
+    }
+    .sec-title {
+      font-family: var(--display); font-weight: 800;
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      letter-spacing: -0.035em; line-height: 1.1; margin-bottom: 0.8rem;
+    }
+    .sec-title mark { background: none; color: var(--green); }
+    .sec-sub { color: var(--muted); font-size: 1.05rem; max-width: 52ch; margin: 0 auto; line-height: 1.7; }
+
+    /* ── BEFORE / AFTER ── */
+    .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .ba-card {
+      border-radius: 20px; padding: 2.5rem 2rem;
+      position: relative; overflow: hidden;
+    }
+    .ba-card.before {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ba-card.after {
+      background: linear-gradient(135deg, rgba(0,229,160,0.07) 0%, rgba(0,229,160,0.02) 100%);
+      border: 1px solid rgba(0,229,160,0.18);
+    }
+    .ba-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 1.5rem; display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.25rem 0.75rem; border-radius: 100px;
+    }
+    .ba-label.before-label { background: rgba(255,80,80,0.1); color: rgba(255,100,100,0.9); border: 1px solid rgba(255,80,80,0.2); }
+    .ba-label.after-label  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,229,160,0.25); }
+    .ba-title { font-family: var(--display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.02em; margin-bottom: 1.5rem; }
+    .ba-list { list-style: none; display: flex; flex-direction: column; gap: 0.85rem; }
+    .ba-item { display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.925rem; line-height: 1.5; }
+    .ba-icon { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; margin-top: 1px; }
+    .ba-item.bad .ba-icon  { background: rgba(255,80,80,0.12); color: rgba(255,100,100,0.9); }
+    .ba-item.bad .ba-text  { color: var(--muted); }
+    .ba-item.good .ba-icon { background: var(--green-dim); color: var(--green); }
+    .ba-item.good .ba-text { color: var(--text); }
+    .ba-vs {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) translateX(0.75rem);
+      width: 44px; height: 44px; background: var(--bg); border: 1px solid var(--border2);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--display); font-weight: 800; font-size: 0.8rem; color: var(--muted);
+      z-index: 2;
+    }
+
+    /* ── INDUSTRIES ── */
+    .ind-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
+    .ind-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.75rem 1.5rem;
+      cursor: pointer; transition: border-color .2s, transform .2s, background .2s;
+      position: relative; overflow: hidden;
+    }
+    .ind-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--green-dim) 0%, transparent 60%);
+      opacity: 0; transition: opacity .2s;
+    }
+    .ind-card:hover { border-color: rgba(0,229,160,0.3); transform: translateY(-4px); background: var(--surface2); }
+    .ind-card:hover::before { opacity: 1; }
+    .ind-emoji { font-size: 2.2rem; margin-bottom: 1rem; display: block; }
+    .ind-name { font-family: var(--display); font-weight: 700; font-size: 1.05rem; margin-bottom: 0.4rem; }
+    .ind-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+    .ind-example {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      margin-top: 1rem; font-size: 0.72rem;
+      background: var(--green-dim); color: var(--green);
+      padding: 0.2rem 0.6rem; border-radius: 4px;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; position: relative; }
+    .how-steps::before {
+      content: '';
+      position: absolute; top: 2.5rem; left: calc(100% / 6); right: calc(100% / 6);
+      height: 1px; background: linear-gradient(90deg, transparent, var(--border2) 20%, var(--border2) 80%, transparent);
+      z-index: 0;
+    }
+    .how-step { padding: 0 1.5rem 0; text-align: center; position: relative; z-index: 1; }
+    .how-num-wrap {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-family: var(--display); font-weight: 800; font-size: 1.1rem;
+      position: relative;
+    }
+    .how-num-wrap.active {
+      background: var(--green-dim); border-color: rgba(0,229,160,0.35);
+      color: var(--green); box-shadow: 0 0 0 6px rgba(0,229,160,0.07);
+    }
+    .how-step-title { font-family: var(--display); font-weight: 700; font-size: 1.05rem; margin-bottom: 0.5rem; }
+    .how-step-desc { color: var(--muted); font-size: 0.875rem; line-height: 1.65; }
+    .how-step-time {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      margin-top: 0.85rem; font-size: 0.72rem; font-weight: 600;
+      color: var(--amber); background: var(--amber-dim);
+      padding: 0.22rem 0.65rem; border-radius: 100px;
+    }
+
+    /* ── FEATURES ── */
+    .feat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem; }
+    .feat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem;
+      transition: border-color .2s;
+    }
+    .feat-card:hover { border-color: var(--border2); }
+    .feat-icon {
+      width: 46px; height: 46px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 1.1rem;
+    }
+    .feat-title { font-family: var(--display); font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
+    .feat-desc { color: var(--muted); font-size: 0.875rem; line-height: 1.65; }
+    .feat-badge {
+      display: inline-block; margin-top: 0.85rem;
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.18rem 0.55rem; border-radius: 4px;
+    }
+
+    /* ── TESTIMONIALS ── */
+    .testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.25rem; }
+    .testi-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem;
+    }
+    .testi-stars { color: var(--amber); font-size: 0.85rem; letter-spacing: 2px; margin-bottom: 1rem; }
+    .testi-text {
+      font-size: 0.925rem; line-height: 1.7; color: var(--muted);
+      font-style: italic; margin-bottom: 1.5rem;
+      position: relative; padding-left: 1.25rem;
+    }
+    .testi-text::before { content: '\201C'; position: absolute; left: 0; top: -4px; font-size: 1.8rem; color: var(--green); font-style: normal; line-height: 1; }
     .testi-author { display: flex; align-items: center; gap: 0.75rem; }
-    .testi-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(0,229,160,0.2); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: var(--accent); font-family: var(--font-display); flex-shrink: 0; }
-    .testi-name { font-weight: 600; font-size: 0.875rem; }
+    .testi-av {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: var(--green-dim); border: 1px solid rgba(0,229,160,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--display); font-weight: 800; font-size: 0.85rem; color: var(--green);
+    }
+    .testi-name { font-weight: 600; font-size: 0.9rem; }
     .testi-role { font-size: 0.75rem; color: var(--muted); }
-    .cta-box { background: var(--surface); border: 0.5px solid rgba(0,229,160,0.2); border-radius: 24px; padding: 4rem 2rem; text-align: center; box-shadow: 0 0 60px rgba(0,229,160,0.06); }
-    .cta-box h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem,4vw,3rem); letter-spacing: -0.03em; margin-bottom: 0.75rem; }
-    .cta-box h2 em { font-style: normal; color: var(--accent); }
-    footer { border-top: 0.5px solid var(--border); padding: 2rem 3rem; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; flex-wrap: wrap; gap: 1rem; }
-    .footer-logo { font-family: var(--font-display); font-weight: 800; color: var(--text); text-decoration: none; }
-    .footer-logo span { color: var(--accent); }
-    .footer-links { display: flex; gap: 1.5rem; }
-    .footer-links a { color: var(--muted); font-size: 0.8rem; text-decoration: none; transition: color 0.2s; }
+
+    /* ── FINAL CTA ── */
+    .cta-box {
+      background: linear-gradient(135deg, rgba(0,229,160,0.08) 0%, rgba(0,229,160,0.03) 50%, transparent 100%);
+      border: 1px solid rgba(0,229,160,0.18);
+      border-radius: 24px; padding: 5rem 2rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-box::before {
+      content: ''; position: absolute; top: -50%; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 300px; pointer-events: none;
+      background: radial-gradient(ellipse, rgba(0,229,160,0.1) 0%, transparent 70%);
+    }
+    .cta-box h2 { font-family: var(--display); font-weight: 800; font-size: clamp(2.2rem,4vw,3.4rem); letter-spacing: -0.04em; margin-bottom: 1rem; }
+    .cta-box p { color: var(--muted); font-size: 1.1rem; max-width: 48ch; margin: 0 auto 2.5rem; line-height: 1.7; }
+    .cta-small { margin-top: 1.75rem; font-size: 0.8rem; color: var(--muted2); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 2.5rem 3rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; z-index: 1; flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-logo { font-family: var(--display); font-weight: 800; color: var(--text); text-decoration: none; font-size: 1.1rem; letter-spacing: -0.02em; }
+    .footer-logo em { font-style: normal; color: var(--green); }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a { color: var(--muted); font-size: 0.82rem; text-decoration: none; transition: color .2s; }
     .footer-links a:hover { color: var(--text); }
-    @media (max-width: 768px) {
-      nav { padding: 1rem 1.5rem; } .nav-links { display: none; }
-      .how-grid, .features-grid, .testi-grid { grid-template-columns: 1fr; }
-      .examples-grid { grid-template-columns: repeat(2,1fr); }
-      .proof-bar { gap: 1.5rem; } .proof-div { display: none; }
+    .footer-copy { font-size: 0.78rem; color: var(--muted2); }
+
+    /* alt section bg */
+    .alt-bg { background: rgba(14,24,40,0.5); }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 1.5rem; }
+      .nav-center { display: none; }
+      .ba-grid { grid-template-columns: 1fr; }
+      .ba-vs { display: none; }
+      .ind-grid { grid-template-columns: repeat(2,1fr); }
+      .how-steps { grid-template-columns: 1fr; gap: 2.5rem; }
+      .how-steps::before { display: none; }
+      .feat-grid, .testi-grid { grid-template-columns: 1fr; }
       footer { flex-direction: column; text-align: center; }
     }
-    @media (max-width: 480px) { .examples-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) {
+      .ind-grid { grid-template-columns: 1fr 1fr; }
+      .hero h1 { font-size: 2.4rem; }
+    }
   </style>
 </head>
 <body>
 
+<!-- ── NAV ── -->
 <nav>
-  <a href="index.html" class="logo">Lead<span>AI</span></a>
-  <ul class="nav-links">
+  <a href="index.html" class="nav-logo">Lead<em>AI</em></a>
+  <ul class="nav-center">
     <li><a href="#how">How it works</a></li>
-    <li><a href="#examples">Examples</a></li>
+    <li><a href="#industries">Industries</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="pricing.html">Pricing</a></li>
-    <li><a href="script-generator.html" class="nav-cta">Try Free &rarr;</a></li>
   </ul>
+  <div class="nav-right">
+    <a href="pricing.html" class="btn-nav-ghost">Pricing</a>
+    <a href="script-generator.html" class="btn-nav-cta">Try Free &rarr;</a>
+  </div>
 </nav>
 
-<!-- Hero -->
+<!-- ── HERO ── -->
 <section class="hero">
   <div class="hero-glow"></div>
-  <div class="badge"><div class="badge-dot"></div> Now in beta &mdash; 47 businesses on waitlist</div>
-  <h1>Turn Any Topic Into a <em>Lead-Getting</em> Video in 30 Seconds</h1>
-  <p class="hero-sub">AI writes the script, reads it aloud, and builds a professional caption video with real stock images. No editing. No filming. Just leads.</p>
-  <div class="hero-cta-row">
-    <a href="script-generator.html" class="btn-primary">&#10022; Create Free Video &rarr;</a>
-    <a href="#demo" class="btn-ghost">Watch demo &darr;</a>
+  <div class="hero-glow2"></div>
+
+  <div class="pill"><div class="pill-dot"></div> AI video generator for businesses</div>
+
+  <h1>The Fastest Way to Get Leads from <mark>Short Video</mark></h1>
+
+  <p class="hero-sub">
+    Type your topic. LeadAI writes the script, adds a voiceover, and builds a caption video ready to post on TikTok, Reels and Shorts &mdash; in under 30 seconds.
+  </p>
+
+  <div class="hero-ctas">
+    <a href="script-generator.html" class="btn-hero">&#10022; Create My First Video Free</a>
+    <a href="#how" class="btn-hero-ghost">See how it works &darr;</a>
   </div>
+
   <div class="hero-trust">
-    <span class="trust-item">&#10003; No credit card</span>
-    <div class="trust-dot"></div>
-    <span class="trust-item">&#10003; 3 free videos</span>
-    <div class="trust-dot"></div>
-    <span class="trust-item">&#10003; Any business</span>
-    <div class="trust-dot"></div>
-    <span class="trust-item">&#10003; Ready in 60s</span>
+    <div class="trust-chip"><strong>&#10003; No credit card</strong></div>
+    <div class="trust-sep"></div>
+    <div class="trust-chip"><strong>&#10003; 3 free videos</strong></div>
+    <div class="trust-sep"></div>
+    <div class="trust-chip"><strong>&#10003; No editing skills needed</strong></div>
+    <div class="trust-sep"></div>
+    <div class="trust-chip"><strong>&#10003; Ready to post in 60s</strong></div>
+  </div>
+
+  <!-- App mockup -->
+  <div class="hero-mockup">
+    <div class="mockup-frame">
+      <div class="mockup-topbar">
+        <div class="dot" style="background:#FF5F56;"></div>
+        <div class="dot" style="background:#FFBD2E;"></div>
+        <div class="dot" style="background:#27C93F;"></div>
+        <div class="mockup-url">leadai.guru/script-generator</div>
+      </div>
+      <div class="mockup-canvas-area">
+        <canvas id="heroCanvas" width="1200" height="525"></canvas>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- Proof bar -->
-<div class="proof-bar">
-  <div><span class="proof-num">30s</span><span class="proof-label">Avg generation time</span></div>
-  <div class="proof-div"></div>
-  <div><span class="proof-num">3&times;</span><span class="proof-label">More leads vs static posts</span></div>
-  <div class="proof-div"></div>
-  <div><span class="proof-num">47+</span><span class="proof-label">Beta businesses signed up</span></div>
-  <div class="proof-div"></div>
-  <div><span class="proof-num">$0</span><span class="proof-label">To get started today</span></div>
+<!-- ── TRUST BAR ── -->
+<div class="trust-bar">
+  <div class="trust-stat">
+    <span class="trust-stat-num">30<em>s</em></span>
+    <div class="trust-stat-label">Avg generation time</div>
+  </div>
+  <div class="trust-bar-div"></div>
+  <div class="trust-stat">
+    <span class="trust-stat-num">3<em>&times;</em></span>
+    <div class="trust-stat-label">More leads vs static posts</div>
+  </div>
+  <div class="trust-bar-div"></div>
+  <div class="trust-stat">
+    <span class="trust-stat-num">47<em>+</em></span>
+    <div class="trust-stat-label">Beta businesses signed up</div>
+  </div>
+  <div class="trust-bar-div"></div>
+  <div class="trust-stat">
+    <span class="trust-stat-num"><em>$</em>0</span>
+    <div class="trust-stat-label">To get started today</div>
+  </div>
+  <div class="trust-bar-div"></div>
+  <div class="trust-stat">
+    <span class="trust-stat-num">4<em>.9</em></span>
+    <div class="trust-stat-label">Beta user rating</div>
+  </div>
 </div>
 
-<!-- Demo -->
-<section id="demo" style="background:linear-gradient(180deg,transparent,rgba(0,229,160,0.03) 50%,transparent);">
-  <div class="section-inner">
-    <div style="text-align:center;margin-bottom:2.5rem;">
-      <div class="section-tag">See it live</div>
-      <h2 class="section-title">Watch LeadAI in Action</h2>
-      <p style="color:var(--muted);max-width:48ch;margin:0 auto;">From blank page to ready-to-post video &mdash; animated demo of the real tool.</p>
+<!-- ── BEFORE / AFTER ── -->
+<section class="sec alt-bg" id="compare">
+  <div class="sec-inner">
+    <div class="sec-header">
+      <div class="sec-tag">Why LeadAI</div>
+      <h2 class="sec-title">The old way is costing you <mark>leads every day</mark></h2>
+      <p class="sec-sub">Every day without video content is a day your competitors are getting the clients that should be yours.</p>
     </div>
-    <div class="demo-wrap">
-      <div class="demo-bar">
-        <div class="demo-dot" style="background:#FF5F56;"></div>
-        <div class="demo-dot" style="background:#FFBD2E;"></div>
-        <div class="demo-dot" style="background:#27C93F;"></div>
-        <div class="demo-url">leadai.guru/script-generator</div>
-      </div>
-      <div class="demo-video-area"><canvas id="demoCanvas" width="1280" height="720"></canvas></div>
-      <div class="demo-caption">
-        <div class="demo-steps">
-          <div class="demo-step"><div class="demo-step-num">1</div> Enter topic</div>
-          <span style="color:rgba(255,255,255,0.15);">&rarr;</span>
-          <div class="demo-step"><div class="demo-step-num">2</div> AI writes script</div>
-          <span style="color:rgba(255,255,255,0.15);">&rarr;</span>
-          <div class="demo-step"><div class="demo-step-num">3</div> Add voiceover</div>
-          <span style="color:rgba(255,255,255,0.15);">&rarr;</span>
-          <div class="demo-step"><div class="demo-step-num">4</div> Download video</div>
+
+    <div style="position:relative;">
+      <div class="ba-grid">
+        <!-- BEFORE -->
+        <div class="ba-card before">
+          <div class="ba-label before-label">&#10005; The old way</div>
+          <div class="ba-title">Creating video without AI</div>
+          <ul class="ba-list">
+            <li class="ba-item bad"><div class="ba-icon">&#10005;</div><span class="ba-text">Spending &pound;500&ndash;&pound;2,000 per video with a videographer</span></li>
+            <li class="ba-item bad"><div class="ba-icon">&#10005;</div><span class="ba-text">Waiting 1&ndash;2 weeks for editing and revisions</span></li>
+            <li class="ba-item bad"><div class="ba-icon">&#10005;</div><span class="ba-text">Struggling to write scripts that hook people in the first 3 seconds</span></li>
+            <li class="ba-item bad"><div class="ba-icon">&#10005;</div><span class="ba-text">Posting 1 video a month because it takes so long</span></li>
+            <li class="ba-item bad"><div class="ba-icon">&#10005;</div><span class="ba-text">Posting to 1 platform — no time to reformat for the others</span></li>
+            <li class="ba-item bad"><div class="ba-icon">&#10005;</div><span class="ba-text">No consistency = algorithm ignores you = no reach</span></li>
+          </ul>
         </div>
-        <a href="script-generator.html" style="font-size:0.82rem;color:var(--accent);text-decoration:none;">Try it yourself &rarr;</a>
+
+        <!-- AFTER -->
+        <div class="ba-card after">
+          <div class="ba-label after-label">&#10003; With LeadAI</div>
+          <div class="ba-title">Creating video with AI</div>
+          <ul class="ba-list">
+            <li class="ba-item good"><div class="ba-icon">&#10003;</div><span class="ba-text">Generate professional videos for <strong>$0 to $49/month</strong> total</span></li>
+            <li class="ba-item good"><div class="ba-icon">&#10003;</div><span class="ba-text">Script + voiceover + caption video in <strong>30 seconds flat</strong></span></li>
+            <li class="ba-item good"><div class="ba-icon">&#10003;</div><span class="ba-text">Claude AI writes hooks proven to stop the scroll in your industry</span></li>
+            <li class="ba-item good"><div class="ba-icon">&#10003;</div><span class="ba-text">Post <strong>daily</strong> &mdash; the algorithm rewards you, leads multiply</span></li>
+            <li class="ba-item good"><div class="ba-icon">&#10003;</div><span class="ba-text">One click formats for TikTok, Reels and YouTube Shorts</span></li>
+            <li class="ba-item good"><div class="ba-icon">&#10003;</div><span class="ba-text">Consistent content = consistent leads = consistent revenue</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="ba-vs">VS</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INDUSTRIES ── -->
+<section class="sec" id="industries">
+  <div class="sec-inner">
+    <div class="sec-header">
+      <div class="sec-tag">Who it&rsquo;s for</div>
+      <h2 class="sec-title">Built for your <mark>exact business</mark></h2>
+      <p class="sec-sub">LeadAI knows your industry. Every script is written for your audience, your platform and your offer.</p>
+    </div>
+    <div class="ind-grid">
+      <div class="ind-card">
+        <span class="ind-emoji">&#127968;</span>
+        <div class="ind-name">Real Estate</div>
+        <div class="ind-desc">Property listings, market updates, neighbourhood tours. Get qualified buyers calling you.</div>
+        <div class="ind-example">e.g. &ldquo;Top 5 Villas Under $800K&rdquo;</div>
+      </div>
+      <div class="ind-card">
+        <span class="ind-emoji">&#127947;</span>
+        <div class="ind-name">Gyms &amp; Fitness</div>
+        <div class="ind-desc">Transformation stories, workout tips, free trial CTAs. Fill your classes every week.</div>
+        <div class="ind-example">e.g. &ldquo;Lose 5kg in 30 Days&rdquo;</div>
+      </div>
+      <div class="ind-card">
+        <span class="ind-emoji">&#128200;</span>
+        <div class="ind-name">Mortgage Brokers</div>
+        <div class="ind-desc">Rate tips, approval guides, common mistakes. Be the broker people call first.</div>
+        <div class="ind-example">e.g. &ldquo;3 Ways to Get Approved Fast&rdquo;</div>
+      </div>
+      <div class="ind-card">
+        <span class="ind-emoji">&#127775;</span>
+        <div class="ind-name">Coaches &amp; Consultants</div>
+        <div class="ind-desc">Authority content, client wins, frameworks. Build trust that converts to bookings.</div>
+        <div class="ind-example">e.g. &ldquo;The 3-Step Client System&rdquo;</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- How it works -->
-<section id="how">
-  <div class="section-inner">
-    <div style="text-align:center;">
-      <div class="section-tag">How it works</div>
-      <h2 class="section-title">3 steps. 30 seconds. Done.</h2>
-      <p style="color:var(--muted);max-width:44ch;margin:0 auto;">No learning curve. No editing skills. Just type your topic and hit generate.</p>
+<!-- ── HOW IT WORKS ── -->
+<section class="sec alt-bg" id="how">
+  <div class="sec-inner">
+    <div class="sec-header">
+      <div class="sec-tag">How it works</div>
+      <h2 class="sec-title">From blank page to posted video in <mark>3 steps</mark></h2>
+      <p class="sec-sub">No training. No design skills. No production team. Just type and generate.</p>
     </div>
-    <div class="how-grid">
-      <div class="how-card"><div class="how-num">1</div>
-        <div class="how-icon" style="background:rgba(0,229,160,0.1);border:0.5px solid rgba(0,229,160,0.2);">&#10022;</div>
-        <div class="how-title">Enter Your Topic</div>
-        <div class="how-desc">Type your topic, pick your platform, choose tone and target audience. That&rsquo;s it.</div>
-        <div class="how-time">&#9201; 30 seconds</div>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num-wrap active">1</div>
+        <div class="how-step-title">Enter Your Topic</div>
+        <div class="how-step-desc">Type your topic, choose your platform (TikTok, Reels or Shorts), pick a tone and your target audience.</div>
+        <div class="how-step-time">&#9201; Takes 20 seconds</div>
       </div>
-      <div class="how-card"><div class="how-num">2</div>
-        <div class="how-icon" style="background:rgba(100,160,255,0.1);border:0.5px solid rgba(100,160,255,0.2);">&#127908;</div>
-        <div class="how-title">AI Builds Everything</div>
-        <div class="how-desc">Claude AI writes Hook &rarr; Body &rarr; CTA. Voiceover reads it instantly. Stock images auto-pulled from Pexels.</div>
-        <div class="how-time">&#9201; Under 10 seconds</div>
+      <div class="how-step">
+        <div class="how-num-wrap active">2</div>
+        <div class="how-step-title">AI Builds Everything</div>
+        <div class="how-step-desc">Claude AI writes your Hook &rarr; Body &rarr; CTA. Browser voice reads it aloud. Stock images auto-pulled from Pexels.</div>
+        <div class="how-step-time">&#9201; Takes 5 seconds</div>
       </div>
-      <div class="how-card"><div class="how-num">3</div>
-        <div class="how-icon" style="background:rgba(255,180,0,0.1);border:0.5px solid rgba(255,180,0,0.2);">&#127910;</div>
-        <div class="how-title">Download &amp; Post</div>
-        <div class="how-desc">Preview your caption video, download it, and post to TikTok, Reels or Shorts. Watch the leads come in.</div>
-        <div class="how-time">&#9201; Posted in 60s total</div>
+      <div class="how-step">
+        <div class="how-num-wrap active">3</div>
+        <div class="how-step-title">Download &amp; Post</div>
+        <div class="how-step-desc">Bold caption video with your chosen style. Download it. Post directly to TikTok, Instagram or YouTube Shorts.</div>
+        <div class="how-step-time">&#9201; Posted in under 60s</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:3.5rem;">
+      <a href="script-generator.html" class="btn-hero">Try it free &mdash; no card needed</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="sec" id="features">
+  <div class="sec-inner">
+    <div class="sec-header">
+      <div class="sec-tag">Features</div>
+      <h2 class="sec-title">Everything you need. <mark>Nothing you don&rsquo;t.</mark></h2>
+      <p class="sec-sub">All the tools to go from zero to posted video in one place. No subscriptions to 5 different apps.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.18);">&#10022;</div>
+        <div class="feat-title">AI Script Generator</div>
+        <div class="feat-desc">Claude AI writes a Hook, Body and CTA built to convert. Optimised for your platform, tone and audience in seconds.</div>
+        <div class="feat-badge" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(0,229,160,0.18);">Powered by Claude</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(100,180,255,0.1);border:1px solid rgba(100,180,255,0.18);">&#127908;</div>
+        <div class="feat-title">Instant Voiceover</div>
+        <div class="feat-desc">50+ browser voices read your script immediately. Adjust speed and pitch. Zero API keys, zero extra cost.</div>
+        <div class="feat-badge" style="background:rgba(100,180,255,0.1);color:#64B4FF;border:1px solid rgba(100,180,255,0.18);">Completely free</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:var(--amber-dim);border:1px solid rgba(255,181,71,0.18);">&#128444;</div>
+        <div class="feat-title">Stock Media Backgrounds</div>
+        <div class="feat-desc">Pexels photos &amp; videos auto-matched to your topic. Real estate, fitness, finance &mdash; all covered automatically.</div>
+        <div class="feat-badge" style="background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,181,71,0.18);">Photos + Videos</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(200,100,255,0.1);border:1px solid rgba(200,100,255,0.18);">&#8679;</div>
+        <div class="feat-title">Upload Your Own Media</div>
+        <div class="feat-desc">Drag &amp; drop your own photos or videos as backgrounds. Your listings, your gym, your face &mdash; fully personalised.</div>
+        <div class="feat-badge" style="background:rgba(200,100,255,0.1);color:#C864FF;border:1px solid rgba(200,100,255,0.18);">JPG · PNG · MP4 · MOV</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.18);">&#127909;</div>
+        <div class="feat-title">Webcam &amp; Face Video</div>
+        <div class="feat-desc">Record yourself straight from your webcam and use it as the background. Your face builds trust. Trust builds leads.</div>
+        <div class="feat-badge" style="background:rgba(255,80,80,0.08);color:#FF6060;border:1px solid rgba(255,80,80,0.18);">Record in-browser</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon" style="background:var(--green-dim);border:1px solid rgba(0,229,160,0.18);">&#127910;</div>
+        <div class="feat-title">Caption Video Export</div>
+        <div class="feat-desc">Bold animated captions like the viral TikToks you see daily. Bold yellow, subtitle bar, or LeadAI green. Download instantly.</div>
+        <div class="feat-badge" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(0,229,160,0.18);">TikTok · Reels · Shorts</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Examples -->
-<section id="examples" style="background:linear-gradient(180deg,transparent,rgba(0,229,160,0.02) 50%,transparent);">
-  <div class="section-inner">
-    <div style="text-align:center;">
-      <div class="section-tag">Examples</div>
-      <h2 class="section-title">Videos that actually generate leads</h2>
-      <p style="color:var(--muted);max-width:48ch;margin:0 auto;">Click any card to preview the animated caption video LeadAI creates.</p>
-    </div>
-    <div class="examples-grid">
-      <div class="example-card" onclick="playExample(0)">
-        <div class="example-preview">
-          <canvas class="example-canvas" id="exCanvas0" width="270" height="480"></canvas>
-          <div class="example-overlay" id="exPlay0"><div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;">&#9654;</div></div>
-        </div>
-        <div class="example-info">
-          <div class="example-industry">&#127968; Real Estate</div>
-          <div class="example-title">&ldquo;Top 5 Dubai Apartments Under $500K&rdquo;</div>
-          <div class="example-stats">
-            <span class="example-stat" style="background:rgba(0,229,160,0.1);color:#00E5A0;border:0.5px solid rgba(0,229,160,0.2);">30s Reel</span>
-            <span class="example-stat" style="background:rgba(100,160,255,0.1);color:#64A0FF;border:0.5px solid rgba(100,160,255,0.2);">Hook&rarr;CTA</span>
-          </div>
-        </div>
-      </div>
-      <div class="example-card" onclick="playExample(1)">
-        <div class="example-preview">
-          <canvas class="example-canvas" id="exCanvas1" width="270" height="480"></canvas>
-          <div class="example-overlay" id="exPlay1"><div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;">&#9654;</div></div>
-        </div>
-        <div class="example-info">
-          <div class="example-industry">&#127947; Gym / Fitness</div>
-          <div class="example-title">&ldquo;Lose 5kg in 30 Days &mdash; Here&rsquo;s How&rdquo;</div>
-          <div class="example-stats">
-            <span class="example-stat" style="background:rgba(0,229,160,0.1);color:#00E5A0;border:0.5px solid rgba(0,229,160,0.2);">60s TikTok</span>
-            <span class="example-stat" style="background:rgba(100,160,255,0.1);color:#64A0FF;border:0.5px solid rgba(100,160,255,0.2);">Free Trial CTA</span>
-          </div>
-        </div>
-      </div>
-      <div class="example-card" onclick="playExample(2)">
-        <div class="example-preview">
-          <canvas class="example-canvas" id="exCanvas2" width="270" height="480"></canvas>
-          <div class="example-overlay" id="exPlay2"><div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;">&#9654;</div></div>
-        </div>
-        <div class="example-info">
-          <div class="example-industry">&#128200; Mortgage Broker</div>
-          <div class="example-title">&ldquo;3 Ways to Get Your Mortgage Approved Fast&rdquo;</div>
-          <div class="example-stats">
-            <span class="example-stat" style="background:rgba(0,229,160,0.1);color:#00E5A0;border:0.5px solid rgba(0,229,160,0.2);">30s Short</span>
-            <span class="example-stat" style="background:rgba(100,160,255,0.1);color:#64A0FF;border:0.5px solid rgba(100,160,255,0.2);">Free Consult</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:2.5rem;">
-      <a href="script-generator.html" class="btn-primary">&#9654; Create Your Own Free &rarr;</a>
-    </div>
-  </div>
-</section>
-
-<!-- Features -->
-<section id="features">
-  <div class="section-inner">
-    <div style="text-align:center;">
-      <div class="section-tag">Features</div>
-      <h2 class="section-title">Everything to generate leads with video</h2>
-      <p style="color:var(--muted);max-width:44ch;margin:0 auto;">No film crew. No editor. No video experience required.</p>
-    </div>
-    <div class="features-grid">
-      <div class="feature-card"><div class="feature-icon" style="background:rgba(0,229,160,0.1);border:0.5px solid rgba(0,229,160,0.2);">&#10022;</div><div class="feature-title">AI Script Writer</div><div class="feature-desc">Claude AI writes Hook &rarr; Body &rarr; CTA in seconds. Optimised for your platform, tone and audience.</div></div>
-      <div class="feature-card"><div class="feature-icon" style="background:rgba(100,160,255,0.1);border:0.5px solid rgba(100,160,255,0.2);">&#127908;</div><div class="feature-title">Instant Voiceover</div><div class="feature-desc">50+ browser voices read your script. No API keys needed. Choose speed and pitch to match your brand.</div></div>
-      <div class="feature-card"><div class="feature-icon" style="background:rgba(255,180,0,0.1);border:0.5px solid rgba(255,180,0,0.2);">&#128444;</div><div class="feature-title">Stock Image &amp; Video BG</div><div class="feature-desc">Pexels pulls real photos and videos matching your topic automatically. Real estate, gym, finance &mdash; all covered.</div></div>
-      <div class="feature-card"><div class="feature-icon" style="background:rgba(200,100,255,0.1);border:0.5px solid rgba(200,100,255,0.2);">&#127910;</div><div class="feature-title">Caption Video Export</div><div class="feature-desc">Bold animated captions like viral TikToks. Yellow text, subtitle bar &mdash; download as video in one click.</div></div>
-      <div class="feature-card"><div class="feature-icon" style="background:rgba(255,80,80,0.1);border:0.5px solid rgba(255,80,80,0.2);">&#9998;</div><div class="feature-title">Paste Your Own Script</div><div class="feature-desc">Already have a script? Skip the AI and paste it in. Goes straight to voiceover &mdash; no credits used.</div></div>
-      <div class="feature-card"><div class="feature-icon" style="background:rgba(0,229,160,0.1);border:0.5px solid rgba(0,229,160,0.2);">&#128241;</div><div class="feature-title">Multi-Platform Ready</div><div class="feature-desc">9:16 vertical format for Instagram Reels, TikTok and YouTube Shorts. One video, three platforms, triple the reach.</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- Testimonials -->
-<section style="background:linear-gradient(180deg,transparent,rgba(0,229,160,0.02) 50%,transparent);">
-  <div class="section-inner">
-    <div style="text-align:center;">
-      <div class="section-tag">Early users</div>
-      <h2 class="section-title">What beta users are saying</h2>
+<!-- ── TESTIMONIALS ── -->
+<section class="sec alt-bg">
+  <div class="sec-inner">
+    <div class="sec-header">
+      <div class="sec-tag">Reviews</div>
+      <h2 class="sec-title">Businesses already <mark>generating leads</mark></h2>
     </div>
     <div class="testi-grid">
-      <div class="testi-card"><div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><div class="testi-quote">&ldquo;I posted my first LeadAI video on Tuesday. By Thursday I had 3 new property enquiries. Total game changer.&rdquo;</div><div class="testi-author"><div class="testi-avatar">SA</div><div><div class="testi-name">Sarah A.</div><div class="testi-role">Real Estate Agent, Dubai</div></div></div></div>
-      <div class="testi-card"><div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><div class="testi-quote">&ldquo;I was spending 3 hours per video with a freelancer. Now I do 5 videos in the same time. The ROI is insane.&rdquo;</div><div class="testi-author"><div class="testi-avatar">MK</div><div><div class="testi-name">Marcus K.</div><div class="testi-role">Fitness Coach, London</div></div></div></div>
-      <div class="testi-card"><div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><div class="testi-quote">&ldquo;My clients have been asking for video content for years. LeadAI lets me deliver it in minutes, not weeks.&rdquo;</div><div class="testi-author"><div class="testi-avatar">JP</div><div><div class="testi-name">James P.</div><div class="testi-role">Marketing Agency, Sydney</div></div></div></div>
-    </div>
-  </div>
-</section>
-
-<!-- Final CTA -->
-<section>
-  <div class="section-inner">
-    <div class="cta-box">
-      <div class="section-tag">Get started free</div>
-      <h2>Start generating <em>real leads</em> today</h2>
-      <p style="color:var(--muted);max-width:44ch;margin:0 auto 2rem;">No credit card. 3 free videos. See why 47+ businesses chose LeadAI.</p>
-      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-        <a href="script-generator.html" class="btn-primary" style="font-size:1.05rem;padding:1rem 2.25rem;">&#10022; Create My First Video Free</a>
-        <a href="pricing.html" class="btn-ghost">See pricing &rarr;</a>
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">I posted my first LeadAI video on Tuesday. By Thursday I had 3 new property enquiries. I wish I&rsquo;d found this a year ago.</div>
+        <div class="testi-author">
+          <div class="testi-av">SA</div>
+          <div><div class="testi-name">Sarah A.</div><div class="testi-role">Real Estate Agent &mdash; Dubai</div></div>
+        </div>
       </div>
-      <p style="margin-top:1.5rem;font-size:0.8rem;color:var(--muted2);">Beta pricing locked forever &middot; Cancel anytime &middot; 60-day free trial for waitlist</p>
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">I was paying a freelancer 3 hours per video. Now I make 5 videos in the time it used to take me to brief one. The ROI is not even close.</div>
+        <div class="testi-author">
+          <div class="testi-av">MK</div>
+          <div><div class="testi-name">Marcus K.</div><div class="testi-role">Fitness Coach &mdash; London</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="testi-text">My mortgage broker clients have been asking for video for years. LeadAI means I can deliver in minutes, not weeks. It&rsquo;s brilliant.</div>
+        <div class="testi-author">
+          <div class="testi-av">JP</div>
+          <div><div class="testi-name">James P.</div><div class="testi-role">Marketing Agency &mdash; Sydney</div></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- ── FINAL CTA ── -->
+<section class="sec">
+  <div class="sec-inner">
+    <div class="cta-box">
+      <div class="sec-tag" style="margin-bottom:1.5rem;">Get started today</div>
+      <h2>Start Getting Leads from Video <mark style="color:var(--green);">Today</mark></h2>
+      <p>3 free videos, no credit card, no setup. Just type your topic and see what LeadAI builds for your business.</p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <a href="script-generator.html" class="btn-hero" style="font-size:1.05rem;padding:1rem 2.5rem;">&#10022; Create My First Free Video</a>
+        <a href="pricing.html" class="btn-hero-ghost" style="font-size:1.05rem;padding:1rem 2rem;">See pricing &rarr;</a>
+      </div>
+      <p class="cta-small">Beta pricing locked forever &middot; Cancel anytime &middot; 60-day free trial for waitlist members</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
 <footer>
-  <a href="index.html" class="footer-logo">Lead<span>AI</span></a>
-  <div class="footer-links"><a href="#how">How it works</a><a href="#examples">Examples</a><a href="pricing.html">Pricing</a><a href="script-generator.html">Try Free</a></div>
-  <div style="font-size:0.78rem;color:var(--muted2);">&copy; 2026 LeadAI. All rights reserved.</div>
+  <a href="index.html" class="footer-logo">Lead<em>AI</em></a>
+  <div class="footer-links">
+    <a href="#how">How it works</a>
+    <a href="#industries">Industries</a>
+    <a href="#features">Features</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="script-generator.html">Try Free</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 LeadAI. All rights reserved.</div>
 </footer>
 
 <script>
-function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
-
-// Animated demo
+// ── Animated hero canvas ──
 (function(){
-  var c=document.getElementById('demoCanvas'),ctx=c.getContext('2d'),W=c.width,H=c.height;
-  var step=0,sp=0;
-  var steps=[
-    {label:'Step 1: Enter your topic',t:'input'},
-    {label:'Step 2: Claude AI writing your script...',t:'thinking'},
-    {label:'Step 3: Script ready!',t:'script'},
-    {label:'Step 4: Building caption video...',t:'video'},
-    {label:'Check mark Ready to post!',t:'done'}
+  var c = document.getElementById('heroCanvas');
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height;
+  var step = 0, sp = 0;
+
+  var stages = [
+    { title: 'Step 1 — Enter your topic', type: 'input' },
+    { title: 'Step 2 — Claude AI is writing your script...', type: 'think' },
+    { title: 'Step 3 — Script ready!', type: 'script' },
+    { title: 'Step 4 — Caption video building...', type: 'video' },
+    { title: '\u2713 Video ready to post!', type: 'done' }
   ];
-  var sLines=['[HOOK]','Dubai has ZERO','property tax!','[BODY]','5% yields guaranteed','100% foreign ownership','From just $180K','[CTA]','Book free consult','at leadai.guru'];
-  var caps=['Dubai has','ZERO tax!','5% yields','Own 100%','From $180K','Book now!'];
+
+  var scriptLines = [
+    { t:'tag', v:'[HOOK]' },
+    { t:'line', v:'Dubai has ZERO property tax.' },
+    { t:'line', v:'Most buyers don\'t know this.' },
+    { t:'tag', v:'[BODY]' },
+    { t:'line', v:'5% rental yields guaranteed.' },
+    { t:'line', v:'100% foreign ownership.' },
+    { t:'line', v:'Properties from $180K.' },
+    { t:'tag', v:'[CTA]' },
+    { t:'line', v:'Book your free consultation' },
+    { t:'line', v:'at leadai.guru today.' },
+  ];
+
+  var caps = ['Dubai has', 'ZERO tax!', '5% yields', 'Own 100%', 'From $180K', 'Book now!'];
+
+  function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
 
   function draw(){
     ctx.clearRect(0,0,W,H);
-    var g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#04090F');g.addColorStop(1,'#0C1520');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-    var s=steps[step];
-    ctx.fillStyle='rgba(0,229,160,0.9)';ctx.font='600 22px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
-    ctx.fillText(s.label.replace('Check mark','\u2713'),48,36);
-    ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fillRect(48,68,W-96,5);
-    ctx.fillStyle='#00E5A0';ctx.fillRect(48,68,(W-96)*((step+sp)/steps.length),5);
+    // bg
+    var bg = ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#060A12'); bg.addColorStop(1,'#0E1828');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
 
-    if(s.t==='input'){
-      rr(ctx,48,100,W-96,58,10);ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill();ctx.strokeStyle='rgba(0,229,160,0.4)';ctx.lineWidth=1;ctx.stroke();
-      var typed='Dubai property investment under $500K'.substring(0,Math.floor(38*Math.min(1,sp*1.8)));
-      ctx.fillStyle='#F0EEE8';ctx.font='400 22px sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(typed,68,129);
-      if(Math.floor(Date.now()/500)%2===0){ctx.fillStyle='#00E5A0';ctx.fillRect(70+ctx.measureText(typed).width+2,118,2,22);}
-      ['Instagram Reels','60 seconds','Educational'].forEach(function(v,i){rr(ctx,48+i*268,186,240,44,8);ctx.fillStyle='rgba(255,255,255,0.04)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;ctx.stroke();ctx.fillStyle='rgba(240,238,232,0.5)';ctx.font='400 15px sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';ctx.fillText(v,64+i*268,208);});
-      rr(ctx,48,258,W-96,54,10);ctx.fillStyle='rgba(0,229,160,'+(0.5+0.5*sp)+')';ctx.fill();
-      ctx.fillStyle='#04090F';ctx.font='600 22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Generate Script',W/2,285);
+    // grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+    for(var gx=0;gx<W;gx+=80){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+    for(var gy=0;gy<H;gy+=80){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
 
-    }else if(s.t==='thinking'){
-      for(var d=0;d<3;d++){var a=(Date.now()/600+d*2.1)%(Math.PI*2);ctx.fillStyle='rgba(0,229,160,'+(0.4+0.6*(d+1)/3)+')';ctx.beginPath();ctx.arc(W/2+Math.cos(a)*28,H/2-50+Math.sin(a)*12,7,0,Math.PI*2);ctx.fill();}
-      ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='500 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('Claude AI is writing your script...',W/2,H/2-14);
-      [0.9,0.7,0.85,0.6,0.75,0.88].forEach(function(w,i){ctx.fillStyle='rgba(255,255,255,'+(0.05+0.04*Math.sin(Date.now()/400+i))+')';rr(ctx,48,H/2+44+i*28,(W-96)*w*Math.min(1,sp*2),14,4);ctx.fill();});
+    var s = stages[step];
+    // Header label
+    ctx.fillStyle = 'rgba(0,229,160,0.85)'; ctx.font = '600 16px sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText(s.title, 40, 28);
+    // Progress bar
+    ctx.fillStyle = 'rgba(255,255,255,0.07)'; rr(ctx,40,56,W-80,4,2); ctx.fill();
+    ctx.fillStyle = '#00E5A0'; rr(ctx,40,56,(W-80)*((step+sp)/stages.length),4,2); ctx.fill();
 
-    }else if(s.t==='script'){
-      rr(ctx,36,94,W-72,H-126,12);ctx.fillStyle='rgba(255,255,255,0.03)';ctx.fill();ctx.strokeStyle='rgba(0,229,160,0.1)';ctx.lineWidth=0.5;ctx.stroke();
-      var tc=sLines.join('').length,sc=Math.floor(tc*sp*1.3),cc=0,ly=114;
-      sLines.forEach(function(line){if(ly>H-40)return;var isT=line.startsWith('[');ctx.fillStyle=isT?'#00E5A0':'rgba(240,238,232,0.85)';ctx.font=(isT?'700':'400')+' '+(isT?'14':'17')+'px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(line.substring(0,Math.max(0,sc-cc)),54,ly);cc+=line.length;ly+=isT?26:23;});
+    if(s.type==='input'){
+      // Input field
+      rr(ctx,40,90,W-80,52,8); ctx.fillStyle='rgba(255,255,255,0.04)'; ctx.fill();
+      ctx.strokeStyle='rgba(0,229,160,0.35)'; ctx.lineWidth=1; ctx.stroke();
+      var typed = 'Dubai property investment under $500K'.substring(0,Math.floor(38*Math.min(1,sp*1.6)));
+      ctx.fillStyle='#EDF0F7'; ctx.font='400 18px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(typed,60,116);
+      if(Math.floor(Date.now()/500)%2===0){ var tw=ctx.measureText(typed).width; ctx.fillStyle='#00E5A0'; ctx.fillRect(62+tw,105,2,22); }
+      // Dropdowns
+      var dds = ['Platform: Instagram Reels','Tone: Professional','Duration: 30s'];
+      dds.forEach(function(d,i){ rr(ctx,40+i*290,164,260,42,7); ctx.fillStyle='rgba(255,255,255,0.04)'; ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=0.5; ctx.stroke(); ctx.fillStyle='rgba(237,240,247,0.45)'; ctx.font='400 13px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(d,56+i*290,185); });
+      // Generate button
+      rr(ctx,40,228,W-80,52,8); ctx.fillStyle='rgba(0,229,160,'+(0.55+0.45*sp)+')'; ctx.fill();
+      ctx.fillStyle='#060A12'; ctx.font='600 18px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('\u2756 Generate Script',W/2,254);
 
-    }else if(s.t==='video'){
-      var pw=200,ph=356,px=(W-pw)/2,py=88;
-      var vg=ctx.createLinearGradient(px,py,px,py+ph);vg.addColorStop(0,'#041A0C');vg.addColorStop(1,'#0D3A20');rr(ctx,px,py,pw,ph,10);ctx.fillStyle=vg;ctx.fill();ctx.strokeStyle='rgba(0,229,160,0.15)';ctx.lineWidth=0.5;ctx.stroke();
-      var ci=Math.floor(sp*caps.length*1.4);
-      caps.slice(0,Math.min(ci+1,caps.length)).forEach(function(cap,i){
-        var alpha=i===Math.min(ci,caps.length-1)?Math.min(1,sp*6):0.25;
-        var cy=py+ph*0.55-(Math.min(ci,caps.length-1)-i)*38;
-        ctx.font='900 28px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.strokeStyle='rgba(0,0,0,0.95)';ctx.lineWidth=9;ctx.lineJoin='round';ctx.strokeText(cap,px+pw/2,cy);
-        ctx.fillStyle='rgba(255,230,0,'+alpha+')';ctx.fillText(cap,px+pw/2,cy);
+    }else if(s.type==='think'){
+      for(var d=0;d<3;d++){ var a=(Date.now()/700+d*2.1)%(Math.PI*2); ctx.fillStyle='rgba(0,229,160,'+(0.35+0.65*((d+1)/3))+')'; ctx.beginPath(); ctx.arc(W/2+Math.cos(a)*32,H/2-30+Math.sin(a)*14,8,0,Math.PI*2); ctx.fill(); }
+      ctx.fillStyle='rgba(237,240,247,0.55)'; ctx.font='500 17px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText('Claude AI is writing your script...',W/2,H/2);
+      [0.92,0.72,0.88,0.58,0.78,0.95].forEach(function(w,i){ var alpha=0.04+0.04*Math.sin(Date.now()/350+i); ctx.fillStyle='rgba(255,255,255,'+alpha+')'; rr(ctx,40,H/2+50+i*26,(W-80)*w*Math.min(1,sp*2.2),12,3); ctx.fill(); });
+
+    }else if(s.type==='script'){
+      rr(ctx,32,84,W-64,H-104,10); ctx.fillStyle='rgba(255,255,255,0.025)'; ctx.fill(); ctx.strokeStyle='rgba(0,229,160,0.08)'; ctx.lineWidth=0.5; ctx.stroke();
+      var totalC=scriptLines.reduce(function(a,l){return a+l.v.length;},0);
+      var shown=Math.floor(totalC*sp*1.25); var cc=0; var ly=104;
+      scriptLines.forEach(function(line){
+        if(ly>H-30)return;
+        ctx.fillStyle=line.t==='tag'?'#00E5A0':'rgba(237,240,247,0.82)';
+        ctx.font=(line.t==='tag'?'700 13px':'400 15px')+' sans-serif';
+        ctx.textAlign='left'; ctx.textBaseline='top';
+        ctx.fillText(line.v.substring(0,Math.max(0,shown-cc)),50,ly);
+        cc+=line.v.length; ly+=line.t==='tag'?24:22;
       });
-      ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(px+10,py+ph-14,pw-20,4);ctx.fillStyle='#00E5A0';ctx.fillRect(px+10,py+ph-14,(pw-20)*sp,4);
-      ctx.fillStyle='rgba(0,229,160,0.7)';ctx.font='500 13px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('Building '+Math.floor(sp*24)+' frames...',W/2,py+ph+12);
 
-    }else if(s.t==='done'){
-      var p=0.85+0.15*Math.sin(Date.now()/500);ctx.fillStyle='rgba(0,229,160,'+(0.1*p)+')';ctx.beginPath();ctx.arc(W/2,H/2-65,85,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='rgba(0,229,160,0.95)';ctx.font='800 60px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('\u2713',W/2,H/2-65);
-      ctx.fillStyle='#F0EEE8';ctx.font='800 26px sans-serif';ctx.textBaseline='top';ctx.fillText('Video Ready to Post!',W/2,H/2+10);
-      ctx.fillStyle='rgba(240,238,232,0.5)';ctx.font='400 16px sans-serif';ctx.fillText('Download  Post to TikTok  Generate leads',W/2,H/2+48);
-      rr(ctx,W/2-120,H/2+90,240,50,10);ctx.fillStyle='#00E5A0';ctx.fill();ctx.fillStyle='#04090F';ctx.font='600 19px sans-serif';ctx.textBaseline='middle';ctx.fillText('Download Video',W/2,H/2+115);
+    }else if(s.type==='video'){
+      var pw=150,ph=270,px=W/2-pw/2,py=72;
+      var vg=ctx.createLinearGradient(px,py,px,py+ph); vg.addColorStop(0,'#041A0C'); vg.addColorStop(1,'#0D3A20');
+      rr(ctx,px,py,pw,ph,10); ctx.fillStyle=vg; ctx.fill(); ctx.strokeStyle='rgba(0,229,160,0.15)'; ctx.lineWidth=0.5; ctx.stroke();
+      var ci=Math.floor(sp*caps.length*1.3);
+      caps.slice(0,Math.min(ci+1,caps.length)).forEach(function(cap,i){
+        var alpha=i===Math.min(ci,caps.length-1)?Math.min(1,sp*5):0.2;
+        var cy=py+ph*0.55-(Math.min(ci,caps.length-1)-i)*34;
+        ctx.font='900 22px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.strokeStyle='rgba(0,0,0,0.95)'; ctx.lineWidth=8; ctx.lineJoin='round'; ctx.strokeText(cap,px+pw/2,cy);
+        ctx.fillStyle='rgba(255,230,0,'+alpha+')'; ctx.fillText(cap,px+pw/2,cy);
+      });
+      ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.fillRect(px+8,py+ph-14,pw-16,3);
+      ctx.fillStyle='#00E5A0'; ctx.fillRect(px+8,py+ph-14,(pw-16)*sp,3);
+      // Side info
+      ctx.fillStyle='rgba(237,240,247,0.5)'; ctx.font='13px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillText('Building '+(Math.floor(sp*24))+' frames...',px+pw+24,py+20);
+      ctx.fillStyle='rgba(0,229,160,0.7)'; ctx.fillText('Caption style: Bold Yellow',px+pw+24,py+44);
+      ctx.fillText('Section: Full script',px+pw+24,py+68);
+
+    }else if(s.type==='done'){
+      var pulse=0.88+0.12*Math.sin(Date.now()/500);
+      ctx.fillStyle='rgba(0,229,160,'+(0.09*pulse)+')'; ctx.beginPath(); ctx.arc(W/2,H/2-45,80,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(0,229,160,0.95)'; ctx.font='800 56px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('\u2713',W/2,H/2-45);
+      ctx.fillStyle='#EDF0F7'; ctx.font='800 24px sans-serif'; ctx.textBaseline='top'; ctx.fillText('Video Ready to Post!',W/2,H/2+20);
+      ctx.fillStyle='rgba(237,240,247,0.45)'; ctx.font='400 14px sans-serif'; ctx.fillText('Download  \u00b7  Post to TikTok  \u00b7  Generate leads',W/2,H/2+56);
+      rr(ctx,W/2-110,H/2+90,220,46,9); ctx.fillStyle='#00E5A0'; ctx.fill();
+      ctx.fillStyle='#060A12'; ctx.font='600 17px sans-serif'; ctx.textBaseline='middle'; ctx.fillText('\u2b07 Download Video',W/2,H/2+113);
     }
+  }
+
+  var lt=0;
+  function tick(ts){
+    if(ts-lt>38){ lt=ts; draw(); }
+    else { requestAnimationFrame(tick); return; }
+    sp+=0.007; if(sp>=1){ sp=0; step=(step+1)%stages.length; }
     requestAnimationFrame(tick);
   }
-  var lt=0;function tick(ts){if(ts-lt>38){lt=ts;draw();}else{requestAnimationFrame(tick);return;}sp+=0.007;if(sp>=1){sp=0;step=(step+1)%steps.length;}requestAnimationFrame(tick);}
   requestAnimationFrame(tick);
 })();
-
-// Example canvases
-var exD=[
-  {lines:['Did you know','Dubai has','ZERO tax?','5 apartments','under $500K','Book now!'],colors:['#FFE600','#FFE600','#FF6B35','#FFE600','#00E5A0','#00E5A0'],b1:'#04090F',b2:'#0C1520'},
-  {lines:['Lose 5kg','in 30 days','No gym needed','Just protein','Good sleep','Get free trial!'],colors:['#00E5A0','#FFFFFF','#FFE600','#FFFFFF','#FFFFFF','#FF6B35'],b1:'#041A0C',b2:'#0D3A20'},
-  {lines:['Mortgage denied?','Here's why','Fix your DTI','Boost your score','3 quick steps','Book free consult'],colors:['#FF6B35','#FFFFFF','#FFB400','#FFFFFF','#FFFFFF','#00E5A0'],b1:'#0A0414',b2:'#1A0A30'}
-];
-var exI=[null,null,null];
-
-function drawEx(id,d,fi){
-  var c=document.getElementById(id);if(!c)return;
-  var ctx=c.getContext('2d'),W=c.width,H=c.height;
-  ctx.clearRect(0,0,W,H);var g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,d.b1);g.addColorStop(1,d.b2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='rgba(0,229,160,0.65)';ctx.font='700 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('LeadAI',W/2,9);
-  var txt=d.lines[fi%d.lines.length],col=d.colors[fi%d.colors.length];
-  ctx.font='900 24px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.strokeStyle='rgba(0,0,0,0.95)';ctx.lineWidth=8;ctx.lineJoin='round';ctx.strokeText(txt,W/2,H*0.55);ctx.fillStyle=col;ctx.fillText(txt,W/2,H*0.55);
-  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(8,H-9,W-16,3);ctx.fillStyle='#00E5A0';ctx.fillRect(8,H-9,(W-16)*((fi%d.lines.length+1)/d.lines.length),3);
-}
-
-window.addEventListener('load',function(){exD.forEach(function(d,i){drawEx('exCanvas'+i,d,0);});});
-
-function playExample(idx){
-  if(exI[idx]){clearInterval(exI[idx]);exI[idx]=null;}
-  var ov=document.getElementById('exPlay'+idx);if(ov)ov.style.display='none';
-  var fi=0;
-  exI[idx]=setInterval(function(){drawEx('exCanvas'+idx,exD[idx],fi);fi++;if(fi>=exD[idx].lines.length){clearInterval(exI[idx]);exI[idx]=null;if(ov)ov.style.display='flex';}},1400);
-}
 </script>
 </body>
 </html>
