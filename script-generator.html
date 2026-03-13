@@ -936,7 +936,8 @@ Book a free consultation at leadai.guru"
       <div class="form-group">
         <label for="imageSearch">Image theme <span style="opacity:0.45;font-size:0.7rem;">(auto-filled from your topic)</span></label>
         <div style="display:flex;gap:0.75rem;">
-          <input type="text" id="imageSearch" class="field-box" placeholder="e.g. Dubai luxury apartment" style="flex:1;background:rgba(255,255,255,0.04);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:0.95rem;padding:0.75rem 1rem;outline:none;" />
+          <input type="text" id="imageSearch" class="field-box" list="searchHistory" placeholder="e.g. Dubai luxury apartment" style="flex:1;background:rgba(255,255,255,0.04);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:0.95rem;padding:0.75rem 1rem;outline:none;" />
+          <datalist id="searchHistory"></datalist>
           <button onclick="fetchImages()" style="background:rgba(255,255,255,0.06);border:0.5px solid var(--border);color:var(--muted);font-family:var(--font-body);font-size:0.85rem;padding:0.75rem 1rem;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all 0.2s;" onmouseover="this.style.color='#F0EEE8'" onmouseout="this.style.color=''">🔍 Search Images</button>
         </div>
       </div>
@@ -1374,6 +1375,15 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       renderImagePicker(allPhotos);
       document.getElementById('imagePicker').style.display = 'block';
 
+      // Save search to history (last 8 unique searches)
+      var history = JSON.parse(localStorage.getItem('leadai_img_history') || '[]');
+      if (history.indexOf(query) === -1) {
+        history.unshift(query);
+        if (history.length > 8) history = history.slice(0, 8);
+        localStorage.setItem('leadai_img_history', JSON.stringify(history));
+      }
+      updateSearchHistory();
+
       // Show video tab count
       var tabV = document.getElementById('tabVideos');
       tabV.textContent = '🎥 Videos (' + allVideos.length + ')';
@@ -1613,96 +1623,92 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   }
 
   async function generateVideo() {
-    if (!lastScript) { showVideoError('Generate or paste a script first.'); return; }
-
-    var section  = document.getElementById('videoSection').value;
-    var capStyle = document.getElementById('captionStyle').value;
-    var wpf      = parseInt(document.getElementById('wordsPerFrame').value);
-    var overlay  = parseFloat(document.getElementById('overlayOpacity').value);
-    var text     = getScriptSection(section);
-    var chunks   = chunkText(text, wpf);
-
-    if (!chunks.length) { showVideoError('No text found for that section.'); return; }
-
     var btn = document.getElementById('videoBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ Loading images...';
-    hideVideoError();
-
-    var progressWrap  = document.getElementById('progressWrap');
-    var progressBar   = document.getElementById('progressBar');
-    var progressLabel = document.getElementById('progressLabel');
-    progressWrap.classList.add('visible');
-    progressLabel.style.display = 'block';
-    progressBar.style.width = '0%';
-
-    var canvas = document.getElementById('captionCanvas');
-    videoFrames = [];
-
-    // Auto-search images if none loaded yet — skip silently if Pexels not configured
-    if (selectedImageUrls.length === 0 && selectedVideoUrls.length === 0) {
-      var searchEl = document.getElementById('imageSearch');
-      if (searchEl && searchEl.value.trim()) {
-        progressLabel.textContent = 'Fetching stock images...';
-        try { await fetchImages(); } catch(e) { /* no Pexels key — use plain background */ }
+    try {
+      // Check script exists
+      if (!lastScript || !lastScript.trim()) {
+        showVideoError('Please generate or paste a script first, then click Generate Video.');
+        return;
       }
-    }
 
-    // Decide: use videos if any selected, else photos
-    var useVideoBg = selectedVideoUrls.length > 0;
-    var mediaElements = [];
+      var section  = document.getElementById('videoSection').value;
+      var capStyle = document.getElementById('captionStyle').value;
+      var wpf      = parseInt(document.getElementById('wordsPerFrame').value) || 5;
+      var overlay  = parseFloat(document.getElementById('overlayOpacity').value) || 0.5;
+      var text     = getScriptSection(section);
+      var chunks   = chunkText(text, wpf);
 
-    if (useVideoBg) {
-      progressLabel.textContent = 'Loading background videos...';
-      for (var ii = 0; ii < selectedVideoUrls.length; ii++) {
-        try {
-          var vid = await loadVideoElement(selectedVideoUrls[ii]);
-          mediaElements.push({ type: 'video', el: vid });
-        } catch(e) {
-          console.warn('Could not load video:', selectedVideoUrls[ii]);
+      if (!chunks.length) { showVideoError('No text found for that section.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Building video...';
+      hideVideoError();
+
+      var progressWrap  = document.getElementById('progressWrap');
+      var progressBar   = document.getElementById('progressBar');
+      var progressLabel = document.getElementById('progressLabel');
+      progressWrap.classList.add('visible');
+      progressLabel.style.display = 'block';
+      progressBar.style.width = '0%';
+
+      var canvas = document.getElementById('captionCanvas');
+      videoFrames = [];
+
+      // Auto-search images if none loaded — skip silently if Pexels not set up
+      if (selectedImageUrls.length === 0 && selectedVideoUrls.length === 0) {
+        var searchEl = document.getElementById('imageSearch');
+        if (searchEl && searchEl.value.trim()) {
+          progressLabel.textContent = 'Fetching stock images...';
+          try { await fetchImages(); } catch(e) { /* continue with plain background */ }
         }
       }
-    } else if (selectedImageUrls.length > 0) {
-      progressLabel.textContent = 'Loading background images...';
-      for (var ii = 0; ii < selectedImageUrls.length; ii++) {
-        try {
-          var img = await loadImage(selectedImageUrls[ii]);
-          mediaElements.push({ type: 'image', el: img });
-        } catch(e) {
-          console.warn('Could not load image:', selectedImageUrls[ii]);
+
+      // Load media elements
+      var mediaElements = [];
+      if (selectedVideoUrls.length > 0) {
+        progressLabel.textContent = 'Loading background videos...';
+        for (var ii = 0; ii < selectedVideoUrls.length; ii++) {
+          try {
+            var vid = await loadVideoElement(selectedVideoUrls[ii]);
+            mediaElements.push({ type: 'video', el: vid });
+          } catch(e) { console.warn('Video load failed:', e); }
+        }
+      } else if (selectedImageUrls.length > 0) {
+        progressLabel.textContent = 'Loading background images...';
+        for (var ii = 0; ii < selectedImageUrls.length; ii++) {
+          try {
+            var img = await loadImage(selectedImageUrls[ii]);
+            mediaElements.push({ type: 'image', el: img });
+          } catch(e) { console.warn('Image load failed:', e); }
         }
       }
+
+      progressLabel.textContent = 'Building ' + chunks.length + ' frames...';
+
+      for (var i = 0; i < chunks.length; i++) {
+        var progress = (i + 1) / chunks.length;
+        var media = mediaElements.length > 0 ? mediaElements[i % mediaElements.length] : null;
+        var kenBurns = 1.0 + (0.08 * (i / Math.max(chunks.length - 1, 1)));
+        videoFrames.push({ text: chunks[i], media: media, progress: progress, cap: capStyle, overlay: overlay, kenBurns: kenBurns });
+        progressBar.style.width = Math.round(progress * 100) + '%';
+        await new Promise(function(r){ setTimeout(r, 4); });
+      }
+
+      // Draw first frame preview
+      renderFrame(canvas, videoFrames[0]);
+
+      document.getElementById('frameCount').textContent = chunks.length;
+      document.getElementById('videoPreview').classList.add('visible');
+      progressLabel.style.display = 'none';
+      setTimeout(function(){ progressWrap.classList.remove('visible'); }, 600);
+
+    } catch(err) {
+      showVideoError('Video error: ' + err.message);
+      console.error('generateVideo error:', err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🎬 Generate Video';
     }
-
-    progressLabel.textContent = 'Building video frames...';
-
-    for (var i = 0; i < chunks.length; i++) {
-      var progress = (i + 1) / chunks.length;
-      var media = mediaElements.length > 0 ? mediaElements[i % mediaElements.length] : null;
-      var kenBurns = 1.0 + (0.08 * (i / Math.max(chunks.length - 1, 1)));
-      videoFrames.push({
-        text: chunks[i],
-        media: media,
-        progress: progress,
-        cap: capStyle,
-        overlay: overlay,
-        kenBurns: kenBurns
-      });
-      progressBar.style.width = Math.round(progress * 100) + '%';
-      await new Promise(function(r){ setTimeout(r, 4); });
-    }
-
-    // Show first frame preview
-    var f0 = videoFrames[0];
-    renderFrame(canvas, f0);
-
-    document.getElementById('frameCount').textContent = chunks.length;
-    document.getElementById('videoPreview').classList.add('visible');
-
-    btn.disabled = false;
-    btn.textContent = '🎬 Regenerate';
-    progressLabel.style.display = 'none';
-    setTimeout(function(){ progressWrap.classList.remove('visible'); }, 600);
   }
 
   function previewAnimation() {
@@ -1786,6 +1792,17 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }
   setTimeout(loadVoices, 200);
+
+  // ── Search history for image search ──
+  function updateSearchHistory() {
+    var dl = document.getElementById('searchHistory');
+    if (!dl) return;
+    var history = JSON.parse(localStorage.getItem('leadai_img_history') || '[]');
+    dl.innerHTML = history.map(function(q) {
+      return '<option value="' + q.replace(/"/g,'&quot;') + '">';
+    }).join('');
+  }
+  updateSearchHistory();
 
 
   // ── Mode switching ──
