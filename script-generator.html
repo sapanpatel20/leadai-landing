@@ -941,11 +941,16 @@ Book a free consultation at leadai.guru"
         </div>
       </div>
 
-      <!-- Image picker -->
+      <!-- Media picker -->
       <div id="imagePicker" style="display:none;">
-        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.6rem;">Select images to use (tap to toggle)</div>
+        <!-- Tabs: Photos / Videos -->
+        <div style="display:flex;gap:0;background:rgba(255,255,255,0.04);border:0.5px solid var(--border);border-radius:8px;padding:3px;margin-bottom:0.75rem;">
+          <button id="tabPhotos" onclick="switchMediaTab('photos')" style="flex:1;padding:0.45rem 0.75rem;border-radius:6px;border:none;font-family:var(--font-body);font-size:0.8rem;font-weight:500;cursor:pointer;background:var(--surface2);color:var(--text);border:0.5px solid var(--border-hover);">🖼 Photos</button>
+          <button id="tabVideos" onclick="switchMediaTab('videos')" style="flex:1;padding:0.45rem 0.75rem;border-radius:6px;border:none;font-family:var(--font-body);font-size:0.8rem;font-weight:500;cursor:pointer;background:transparent;color:var(--muted);">🎥 Videos</button>
+        </div>
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.6rem;" id="mediaPickerLabel">Select photos (tap to toggle)</div>
         <div id="imageGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;"></div>
-        <div style="font-size:0.72rem;color:var(--muted2);margin-top:0.5rem;">Photos from <a href="https://pexels.com" target="_blank" style="color:var(--muted);">Pexels</a> — free to use</div>
+        <div style="font-size:0.72rem;color:var(--muted2);margin-top:0.5rem;">Media from <a href="https://pexels.com" target="_blank" style="color:var(--muted);">Pexels</a> — free to use</div>
       </div>
 
       <div class="style-grid">
@@ -1320,7 +1325,31 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     return styles[style] || styles['bold_yellow'];
   }
 
-  // Fetch images from Pexels via our proxy
+  // ── Media tab state ──
+  var currentMediaTab = 'photos';
+  var allPhotos = [];
+  var allVideos = [];
+  var selectedVideoUrls = [];
+
+  function switchMediaTab(tab) {
+    currentMediaTab = tab;
+    var tabP = document.getElementById('tabPhotos');
+    var tabV = document.getElementById('tabVideos');
+    var label = document.getElementById('mediaPickerLabel');
+    if (tab === 'photos') {
+      tabP.style.background = 'var(--surface2)'; tabP.style.color = 'var(--text)'; tabP.style.border = '0.5px solid var(--border-hover)';
+      tabV.style.background = 'transparent'; tabV.style.color = 'var(--muted)'; tabV.style.border = 'none';
+      label.textContent = 'Select photos (tap to toggle)';
+      renderImagePicker(allPhotos);
+    } else {
+      tabV.style.background = 'var(--surface2)'; tabV.style.color = 'var(--text)'; tabV.style.border = '0.5px solid var(--border-hover)';
+      tabP.style.background = 'transparent'; tabP.style.color = 'var(--muted)'; tabP.style.border = 'none';
+      label.textContent = 'Select videos (tap to toggle)';
+      renderVideoPicker(allVideos);
+    }
+  }
+
+  // Fetch both photos AND videos from Pexels via our proxy
   async function fetchImages() {
     var query = document.getElementById('imageSearch').value.trim();
     if (!query) { showVideoError('Enter an image theme first.'); return; }
@@ -1333,17 +1362,24 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     try {
       var res = await fetch('/api/images?query=' + encodeURIComponent(query) + '&per_page=6');
       var data = await res.json();
-
       if (data.error) throw new Error(data.error);
-      if (!data.photos || !data.photos.length) throw new Error('No images found for that topic');
 
-      loadedImages = data.photos;
-      selectedImageUrls = data.photos.map(function(p){ return p.url; }); // select all by default
-      renderImagePicker(data.photos);
+      allPhotos = data.photos || [];
+      allVideos = data.videos || [];
+
+      // Default select all photos
+      selectedImageUrls = allPhotos.map(function(p){ return p.url; });
+      selectedVideoUrls = [];
+
+      renderImagePicker(allPhotos);
       document.getElementById('imagePicker').style.display = 'block';
 
+      // Show video tab count
+      var tabV = document.getElementById('tabVideos');
+      tabV.textContent = '🎥 Videos (' + allVideos.length + ')';
+
     } catch(err) {
-      showVideoError('Image search failed: ' + err.message);
+      showVideoError('Search failed: ' + err.message);
     } finally {
       btn.textContent = '🔍 Search Images';
       btn.disabled = false;
@@ -1353,11 +1389,14 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   function renderImagePicker(photos) {
     var grid = document.getElementById('imageGrid');
     grid.innerHTML = '';
-    photos.forEach(function(p, idx) {
+    if (!photos.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:0.85rem;padding:1rem 0;">No photos found.</div>';
+      return;
+    }
+    photos.forEach(function(p) {
+      var isSelected = selectedImageUrls.indexOf(p.url) !== -1;
       var wrap = document.createElement('div');
-      wrap.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid #00E5A0;aspect-ratio:9/16;';
-      wrap.setAttribute('data-idx', idx);
-      wrap.setAttribute('data-selected', 'true');
+      wrap.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid ' + (isSelected ? '#00E5A0' : 'rgba(255,255,255,0.1)') + ';aspect-ratio:9/16;';
 
       var img = document.createElement('img');
       img.src = p.thumb;
@@ -1365,27 +1404,65 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       img.crossOrigin = 'anonymous';
 
       var check = document.createElement('div');
-      check.style.cssText = 'position:absolute;top:4px;right:4px;width:20px;height:20px;background:#00E5A0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;font-weight:700;';
+      check.style.cssText = 'position:absolute;top:4px;right:4px;width:20px;height:20px;background:#00E5A0;border-radius:50%;display:' + (isSelected ? 'flex' : 'none') + ';align-items:center;justify-content:center;font-size:11px;color:#000;font-weight:700;';
       check.textContent = '✓';
 
-      wrap.appendChild(img);
-      wrap.appendChild(check);
-
+      wrap.appendChild(img); wrap.appendChild(check);
       wrap.onclick = function() {
-        var isSelected = wrap.getAttribute('data-selected') === 'true';
-        if (isSelected) {
-          wrap.setAttribute('data-selected', 'false');
+        var sel = selectedImageUrls.indexOf(p.url) !== -1;
+        if (sel) {
+          selectedImageUrls = selectedImageUrls.filter(function(u){ return u !== p.url; });
           wrap.style.borderColor = 'rgba(255,255,255,0.1)';
           check.style.display = 'none';
-          selectedImageUrls = selectedImageUrls.filter(function(u){ return u !== p.url; });
         } else {
-          wrap.setAttribute('data-selected', 'true');
+          selectedImageUrls.push(p.url);
           wrap.style.borderColor = '#00E5A0';
           check.style.display = 'flex';
-          selectedImageUrls.push(p.url);
         }
       };
+      grid.appendChild(wrap);
+    });
+  }
 
+  function renderVideoPicker(videos) {
+    var grid = document.getElementById('imageGrid');
+    grid.innerHTML = '';
+    if (!videos.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:0.85rem;padding:1rem 0;">No videos found. Try different search terms.</div>';
+      return;
+    }
+    videos.forEach(function(v) {
+      var isSelected = selectedVideoUrls.indexOf(v.url) !== -1;
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid ' + (isSelected ? '#64A0FF' : 'rgba(255,255,255,0.1)') + ';aspect-ratio:9/16;background:#000;';
+
+      // Thumbnail image
+      var thumb = document.createElement('img');
+      thumb.src = v.thumb;
+      thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;opacity:0.8;';
+
+      // Video badge
+      var badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:0.6rem;padding:2px 6px;border-radius:4px;';
+      badge.textContent = '▶ ' + (v.duration || '?') + 's';
+
+      var check = document.createElement('div');
+      check.style.cssText = 'position:absolute;top:4px;right:4px;width:20px;height:20px;background:#64A0FF;border-radius:50%;display:' + (isSelected ? 'flex' : 'none') + ';align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;';
+      check.textContent = '✓';
+
+      wrap.appendChild(thumb); wrap.appendChild(badge); wrap.appendChild(check);
+      wrap.onclick = function() {
+        var sel = selectedVideoUrls.indexOf(v.url) !== -1;
+        if (sel) {
+          selectedVideoUrls = selectedVideoUrls.filter(function(u){ return u !== v.url; });
+          wrap.style.borderColor = 'rgba(255,255,255,0.1)';
+          check.style.display = 'none';
+        } else {
+          selectedVideoUrls.push(v.url);
+          wrap.style.borderColor = '#64A0FF';
+          check.style.display = 'flex';
+        }
+      };
       grid.appendChild(wrap);
     });
   }
@@ -1399,6 +1476,36 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       img.onerror = function() { reject(new Error('Failed to load image')); };
       img.src = url;
     });
+  }
+
+  function loadVideoElement(url) {
+    return new Promise(function(resolve, reject) {
+      var vid = document.createElement('video');
+      vid.crossOrigin = 'anonymous';
+      vid.muted = true;
+      vid.loop = true;
+      vid.playsInline = true;
+      vid.oncanplay = function() {
+        vid.play().catch(function(){});
+        resolve(vid);
+      };
+      vid.onerror = function() { reject(new Error('Failed to load video')); };
+      vid.src = url;
+      vid.load();
+      // Timeout fallback
+      setTimeout(function() { resolve(vid); }, 5000);
+    });
+  }
+
+  // Unified frame renderer — handles both image and video backgrounds
+  function renderFrame(canvas, f) {
+    if (!f.media) {
+      drawFrameNoImage(canvas, f.text, f.progress, f.cap);
+    } else if (f.media.type === 'video') {
+      drawFrameWithImage(canvas, f.text, f.media.el, f.progress, f.cap, f.overlay, 1.0);
+    } else {
+      drawFrameWithImage(canvas, f.text, f.media.el, f.progress, f.cap, f.overlay, f.kenBurns);
+    }
   }
 
   function drawFrameWithImage(canvas, text, img, progress, captionStyleKey, overlayOpacity, kenBurnsScale) {
@@ -1536,14 +1643,26 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       }
     }
 
-    // Load selected images
-    var imgElements = [];
-    if (selectedImageUrls.length > 0) {
-      progressLabel.textContent = 'Loading images...';
+    // Decide: use videos if any selected, else photos
+    var useVideoBg = selectedVideoUrls.length > 0;
+    var mediaElements = [];
+
+    if (useVideoBg) {
+      progressLabel.textContent = 'Loading background videos...';
+      for (var ii = 0; ii < selectedVideoUrls.length; ii++) {
+        try {
+          var vid = await loadVideoElement(selectedVideoUrls[ii]);
+          mediaElements.push({ type: 'video', el: vid });
+        } catch(e) {
+          console.warn('Could not load video:', selectedVideoUrls[ii]);
+        }
+      }
+    } else if (selectedImageUrls.length > 0) {
+      progressLabel.textContent = 'Loading background images...';
       for (var ii = 0; ii < selectedImageUrls.length; ii++) {
         try {
           var img = await loadImage(selectedImageUrls[ii]);
-          imgElements.push(img);
+          mediaElements.push({ type: 'image', el: img });
         } catch(e) {
           console.warn('Could not load image:', selectedImageUrls[ii]);
         }
@@ -1552,33 +1671,25 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
     progressLabel.textContent = 'Building video frames...';
 
-    // Build frames
     for (var i = 0; i < chunks.length; i++) {
       var progress = (i + 1) / chunks.length;
-      // Pick image — cycle through available images
-      var imgEl = imgElements.length > 0 ? imgElements[i % imgElements.length] : null;
-      // Ken Burns: zoom from 1.0 to 1.08 over the frame
+      var media = mediaElements.length > 0 ? mediaElements[i % mediaElements.length] : null;
       var kenBurns = 1.0 + (0.08 * (i / Math.max(chunks.length - 1, 1)));
       videoFrames.push({
         text: chunks[i],
-        img: imgEl,
+        media: media,
         progress: progress,
         cap: capStyle,
         overlay: overlay,
         kenBurns: kenBurns
       });
       progressBar.style.width = Math.round(progress * 100) + '%';
-      // Yield to browser
       await new Promise(function(r){ setTimeout(r, 4); });
     }
 
     // Show first frame preview
     var f0 = videoFrames[0];
-    if (f0.img) {
-      drawFrameWithImage(canvas, f0.text, f0.img, f0.progress, f0.cap, f0.overlay, f0.kenBurns);
-    } else {
-      drawFrameNoImage(canvas, f0.text, f0.progress, f0.cap);
-    }
+    renderFrame(canvas, f0);
 
     document.getElementById('frameCount').textContent = chunks.length;
     document.getElementById('videoPreview').classList.add('visible');
@@ -1596,11 +1707,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     var i = 0;
     animInterval = setInterval(function() {
       var f = videoFrames[i];
-      if (f.img) {
-        drawFrameWithImage(canvas, f.text, f.img, f.progress, f.cap, f.overlay, f.kenBurns);
-      } else {
-        drawFrameNoImage(canvas, f.text, f.progress, f.cap);
-      }
+      renderFrame(canvas, videoFrames[i]);
       i++;
       if (i >= videoFrames.length) { clearInterval(animInterval); animInterval = null; }
     }, 1200);
@@ -1628,9 +1735,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     rec.start();
     var i = 0;
     function nextFrame() {
-      var f = videoFrames[i];
-      if(f.img){drawFrameWithImage(canvas,f.text,f.img,f.progress,f.cap,f.overlay,f.kenBurns);}
-      else{drawFrameNoImage(canvas,f.text,f.progress,f.cap);}
+      renderFrame(canvas, videoFrames[i]);
       i++;
       if(i < videoFrames.length){ setTimeout(nextFrame, 1000); }
       else { rec.stop(); }
