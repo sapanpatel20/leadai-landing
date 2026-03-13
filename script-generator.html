@@ -928,20 +928,27 @@ Book a free consultation at leadai.guru"
   <!-- Video Generation Card (Week 3) -->
   <div class="video-card" id="videoCard">
     <div class="video-header">
-      🎬 Step 3 — Generate Caption Video
+      🎬 Step 3 — Generate Video with Stock Images
     </div>
     <div class="video-body">
-      <div class="style-grid">
-        <div class="form-group">
-          <label for="bgColor">Background Style</label>
-          <select id="bgColor">
-            <option value="dark">Dark (black) — TikTok style</option>
-            <option value="gradient_blue">Blue gradient — professional</option>
-            <option value="gradient_green">Green gradient — real estate</option>
-            <option value="gradient_red">Red gradient — urgent/sales</option>
-            <option value="white">White — clean minimal</option>
-          </select>
+
+      <!-- Image search row -->
+      <div class="form-group">
+        <label for="imageSearch">Image theme <span style="opacity:0.45;font-size:0.7rem;">(auto-filled from your topic)</span></label>
+        <div style="display:flex;gap:0.75rem;">
+          <input type="text" id="imageSearch" class="field-box" placeholder="e.g. Dubai luxury apartment" style="flex:1;background:rgba(255,255,255,0.04);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:0.95rem;padding:0.75rem 1rem;outline:none;" />
+          <button onclick="fetchImages()" style="background:rgba(255,255,255,0.06);border:0.5px solid var(--border);color:var(--muted);font-family:var(--font-body);font-size:0.85rem;padding:0.75rem 1rem;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all 0.2s;" onmouseover="this.style.color='#F0EEE8'" onmouseout="this.style.color=''">🔍 Search Images</button>
         </div>
+      </div>
+
+      <!-- Image picker -->
+      <div id="imagePicker" style="display:none;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.6rem;">Select images to use (tap to toggle)</div>
+        <div id="imageGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;"></div>
+        <div style="font-size:0.72rem;color:var(--muted2);margin-top:0.5rem;">Photos from <a href="https://pexels.com" target="_blank" style="color:var(--muted);">Pexels</a> — free to use</div>
+      </div>
+
+      <div class="style-grid">
         <div class="form-group">
           <label for="captionStyle">Caption Style</label>
           <select id="captionStyle">
@@ -968,13 +975,23 @@ Book a free consultation at leadai.guru"
             <option value="8">8 words — slower</option>
           </select>
         </div>
+        <div class="form-group">
+          <label for="overlayOpacity">Image darkness</label>
+          <select id="overlayOpacity">
+            <option value="0.3">Light overlay</option>
+            <option value="0.5" selected>Medium overlay</option>
+            <option value="0.7">Dark overlay</option>
+          </select>
+        </div>
       </div>
+
       <button class="btn-video" id="videoBtn" onclick="generateVideo()">
-        🎬 Generate Caption Video
+        🎬 Generate Video
       </button>
       <div class="progress-bar-wrap" id="progressWrap">
         <div class="progress-bar" id="progressBar"></div>
       </div>
+      <div style="font-size:0.8rem;color:var(--muted);text-align:center;display:none;" id="progressLabel"></div>
       <div class="video-error" id="videoError"></div>
       <div class="video-preview" id="videoPreview">
         <div class="audio-label">
@@ -986,10 +1003,10 @@ Book a free consultation at leadai.guru"
         </div>
         <div class="video-controls">
           <button class="btn-play-preview" onclick="previewAnimation()">▶ Preview Animation</button>
-          <button class="btn-dl-video" onclick="downloadVideo()">⬇ Download MP4</button>
+          <button class="btn-dl-video" onclick="downloadVideo()">⬇ Download Video</button>
         </div>
         <div class="video-note">
-          💡 For best results: play the voiceover on your device while recording the video with a screen recorder.
+          💡 Play the voiceover while screen-recording this preview for a complete video.
         </div>
       </div>
     </div>
@@ -1130,6 +1147,12 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     statsRow.style.animation = 'fadeUp 0.4s ease both';
 
     document.getElementById('voiceCard').classList.add('visible');
+    // Auto-fill image search from topic
+    var topicEl = document.getElementById('topic');
+    var imgSearchEl = document.getElementById('imageSearch');
+    if (topicEl && topicEl.value.trim() && imgSearchEl && !imgSearchEl.value.trim()) {
+      imgSearchEl.value = topicEl.value.trim();
+    }
   }
 
   function showOutputCard(loading) {
@@ -1259,184 +1282,311 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   // ── Video Generation (Week 3) ──
   let videoFrames = [];
   let animInterval = null;
+  let loadedImages = [];
+  let selectedImageUrls = [];
 
   function getScriptSection(section) {
     if (!lastScript) return '';
     if (section === 'full') {
       var parts = [];
       ['HOOK','BODY','CTA'].forEach(function(k) {
-        var m = lastScript.match(new RegExp('\\[' + k + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
+        var m = lastScript.match(new RegExp('\[' + k + '\]([\s\S]*?)(?=\[|$)', 'i'));
         if (m) parts.push(m[1].trim());
       });
       return parts.join(' ') || lastScript;
     }
     var key = section.toUpperCase();
-    var match = lastScript.match(new RegExp('\\[' + key + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
+    var match = lastScript.match(new RegExp('\[' + key + '\]([\s\S]*?)(?=\[|$)', 'i'));
     return match ? match[1].trim() : lastScript;
   }
 
   function chunkText(text, wordsPerChunk) {
-    // Clean up the text
-    var clean = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
-    var words = clean.split(' ').filter(function(w) { return w.length > 0; });
+    var clean = text.replace(/\[\w+\]/g,'').replace(/\n+/g,' ').replace(/\s+/g,' ').trim();
+    var words = clean.split(' ').filter(function(w){return w.length>0;});
     var chunks = [];
-    for (var i = 0; i < words.length; i += wordsPerChunk) {
-      chunks.push(words.slice(i, i + wordsPerChunk).join(' '));
+    for(var i=0;i<words.length;i+=wordsPerChunk){
+      chunks.push(words.slice(i,i+wordsPerChunk).join(' '));
     }
     return chunks;
   }
 
-  function getBgStyle(style) {
-    var styles = {
-      'dark': { type: 'solid', color: '#000000' },
-      'gradient_blue': { type: 'gradient', c1: '#0A0F2E', c2: '#1A3A6E' },
-      'gradient_green': { type: 'gradient', c1: '#041A0C', c2: '#0D4A20' },
-      'gradient_red': { type: 'gradient', c1: '#1A0A0A', c2: '#4A1010' },
-      'white': { type: 'solid', color: '#FFFFFF' }
-    };
-    return styles[style] || styles['dark'];
-  }
-
   function getCaptionStyle(style) {
     var styles = {
-      'bold_yellow': { color: '#FFE600', stroke: '#000000', size: 90, weight: '900' },
-      'bold_white':  { color: '#FFFFFF', stroke: '#000000', size: 90, weight: '900' },
-      'bold_green':  { color: '#00E5A0', stroke: '#000000', size: 90, weight: '900' },
-      'subtitle':    { color: '#FFFFFF', stroke: null, size: 60, weight: '600', bar: true }
+      'bold_yellow': { color: '#FFE600', stroke: '#000000', size: 88, weight: '900' },
+      'bold_white':  { color: '#FFFFFF', stroke: '#000000', size: 88, weight: '900' },
+      'bold_green':  { color: '#00E5A0', stroke: '#000000', size: 88, weight: '900' },
+      'subtitle':    { color: '#FFFFFF', stroke: null, size: 58, weight: '700', bar: true }
     };
     return styles[style] || styles['bold_yellow'];
   }
 
-  function drawFrame(canvas, text, bgStyleKey, captionStyleKey, progress) {
+  // Fetch images from Pexels via our proxy
+  async function fetchImages() {
+    var query = document.getElementById('imageSearch').value.trim();
+    if (!query) { showVideoError('Enter an image theme first.'); return; }
+
+    var btn = document.querySelector('[onclick="fetchImages()"]');
+    btn.textContent = '⏳ Searching...';
+    btn.disabled = true;
+    hideVideoError();
+
+    try {
+      var res = await fetch('/api/images?query=' + encodeURIComponent(query) + '&per_page=6');
+      var data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+      if (!data.photos || !data.photos.length) throw new Error('No images found for that topic');
+
+      loadedImages = data.photos;
+      selectedImageUrls = data.photos.map(function(p){ return p.url; }); // select all by default
+      renderImagePicker(data.photos);
+      document.getElementById('imagePicker').style.display = 'block';
+
+    } catch(err) {
+      showVideoError('Image search failed: ' + err.message);
+    } finally {
+      btn.textContent = '🔍 Search Images';
+      btn.disabled = false;
+    }
+  }
+
+  function renderImagePicker(photos) {
+    var grid = document.getElementById('imageGrid');
+    grid.innerHTML = '';
+    photos.forEach(function(p, idx) {
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid #00E5A0;aspect-ratio:9/16;';
+      wrap.setAttribute('data-idx', idx);
+      wrap.setAttribute('data-selected', 'true');
+
+      var img = document.createElement('img');
+      img.src = p.thumb;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+      img.crossOrigin = 'anonymous';
+
+      var check = document.createElement('div');
+      check.style.cssText = 'position:absolute;top:4px;right:4px;width:20px;height:20px;background:#00E5A0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;font-weight:700;';
+      check.textContent = '✓';
+
+      wrap.appendChild(img);
+      wrap.appendChild(check);
+
+      wrap.onclick = function() {
+        var isSelected = wrap.getAttribute('data-selected') === 'true';
+        if (isSelected) {
+          wrap.setAttribute('data-selected', 'false');
+          wrap.style.borderColor = 'rgba(255,255,255,0.1)';
+          check.style.display = 'none';
+          selectedImageUrls = selectedImageUrls.filter(function(u){ return u !== p.url; });
+        } else {
+          wrap.setAttribute('data-selected', 'true');
+          wrap.style.borderColor = '#00E5A0';
+          check.style.display = 'flex';
+          selectedImageUrls.push(p.url);
+        }
+      };
+
+      grid.appendChild(wrap);
+    });
+  }
+
+  // Load an image as HTMLImageElement
+  function loadImage(url) {
+    return new Promise(function(resolve, reject) {
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() { resolve(img); };
+      img.onerror = function() { reject(new Error('Failed to load image')); };
+      img.src = url;
+    });
+  }
+
+  function drawFrameWithImage(canvas, text, img, progress, captionStyleKey, overlayOpacity, kenBurnsScale) {
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Background
-    var bg = getBgStyle(bgStyleKey);
-    if (bg.type === 'gradient') {
-      var grd = ctx.createLinearGradient(0, 0, 0, H);
-      grd.addColorStop(0, bg.c1);
-      grd.addColorStop(1, bg.c2);
-      ctx.fillStyle = grd;
-    } else {
-      ctx.fillStyle = bg.color;
-    }
+    // Draw image with Ken Burns zoom effect
+    var scale = kenBurnsScale || 1.0;
+    var iw = img.naturalWidth || img.width;
+    var ih = img.naturalHeight || img.height;
+    var ratio = Math.max(W / iw, H / ih) * scale;
+    var dw = iw * ratio;
+    var dh = ih * ratio;
+    var dx = (W - dw) / 2;
+    var dy = (H - dh) / 2;
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    // Dark overlay for readability
+    ctx.fillStyle = 'rgba(0,0,0,' + (overlayOpacity || 0.5) + ')';
     ctx.fillRect(0, 0, W, H);
 
-    // Subtle grid overlay for depth
-    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-    ctx.lineWidth = 1;
-    for (var x = 0; x < W; x += 80) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for (var y = 0; y < H; y += 80) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-    // Logo watermark top
-    ctx.font = '500 42px Syne, sans-serif';
-    ctx.fillStyle = 'rgba(0,229,160,0.6)';
+    // LeadAI watermark top
+    ctx.font = '700 38px sans-serif';
+    ctx.fillStyle = 'rgba(0,229,160,0.85)';
     ctx.textAlign = 'center';
-    ctx.fillText('LeadAI', W/2, 100);
+    ctx.textBaseline = 'top';
+    ctx.fillText('LeadAI', W/2, 80);
 
+    // Caption
     var cap = getCaptionStyle(captionStyleKey);
+    ctx.textBaseline = 'middle';
 
     if (cap.bar) {
-      // Subtitle bar style
-      var barH = 140;
-      var barY = H * 0.72;
-      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      var barH = 150;
+      var barY = H * 0.7;
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
       ctx.fillRect(0, barY, W, barH);
-      ctx.font = cap.weight + ' ' + cap.size + 'px DM Sans, sans-serif';
+      ctx.font = cap.weight + ' ' + cap.size + 'px sans-serif';
       ctx.fillStyle = cap.color;
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      wrapText(ctx, text, W/2, barY + barH/2, W - 80, cap.size + 10);
+      wrapText(ctx, text, W/2, barY + barH/2, W - 80, cap.size + 12, false);
     } else {
-      // Bold floating caption in center
-      ctx.font = cap.weight + ' ' + cap.size + 'px DM Sans, sans-serif';
+      ctx.font = cap.weight + ' ' + cap.size + 'px sans-serif';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      // Shadow / stroke for readability
+      // Stroke for readability over images
       if (cap.stroke) {
         ctx.strokeStyle = cap.stroke;
-        ctx.lineWidth = 18;
+        ctx.lineWidth = 20;
         ctx.lineJoin = 'round';
-        wrapText(ctx, text, W/2, H/2, W - 120, cap.size + 16, true);
+        wrapText(ctx, text, W/2, H * 0.62, W - 100, cap.size + 16, true);
       }
       ctx.fillStyle = cap.color;
-      wrapText(ctx, text, W/2, H/2, W - 120, cap.size + 16, false);
+      wrapText(ctx, text, W/2, H * 0.62, W - 100, cap.size + 16, false);
     }
 
-    // Progress bar at bottom
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.fillRect(60, H - 80, W - 120, 8);
+    // Progress bar
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillRect(60, H - 70, W - 120, 6);
     ctx.fillStyle = '#00E5A0';
-    ctx.fillRect(60, H - 80, (W - 120) * progress, 8);
+    ctx.fillRect(60, H - 70, (W - 120) * progress, 6);
+  }
+
+  function drawFrameNoImage(canvas, text, progress, captionStyleKey) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    var grd = ctx.createLinearGradient(0,0,0,H);
+    grd.addColorStop(0,'#04090F'); grd.addColorStop(1,'#0C1520');
+    ctx.fillStyle = grd; ctx.fillRect(0,0,W,H);
+    ctx.font = '700 38px sans-serif';
+    ctx.fillStyle = 'rgba(0,229,160,0.8)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('LeadAI', W/2, 80);
+    var cap = getCaptionStyle(captionStyleKey);
+    ctx.textBaseline = 'middle';
+    ctx.font = cap.weight + ' ' + cap.size + 'px sans-serif';
+    ctx.textAlign = 'center';
+    if(cap.stroke){ctx.strokeStyle=cap.stroke;ctx.lineWidth=20;ctx.lineJoin='round';wrapText(ctx,text,W/2,H/2,W-100,cap.size+16,true);}
+    ctx.fillStyle=cap.color;
+    wrapText(ctx,text,W/2,H/2,W-100,cap.size+16,false);
+    ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(60,H-70,W-120,6);
+    ctx.fillStyle='#00E5A0';ctx.fillRect(60,H-70,(W-120)*progress,6);
   }
 
   function wrapText(ctx, text, x, y, maxWidth, lineH, strokeMode) {
     var words = text.split(' ');
-    var lines = [];
-    var current = '';
-    for (var i = 0; i < words.length; i++) {
-      var test = current ? current + ' ' + words[i] : words[i];
-      if (ctx.measureText(test).width > maxWidth && current) {
-        lines.push(current); current = words[i];
-      } else { current = test; }
+    var lines = []; var current = '';
+    for(var i=0;i<words.length;i++){
+      var test = current ? current+' '+words[i] : words[i];
+      if(ctx.measureText(test).width > maxWidth && current){lines.push(current);current=words[i];}
+      else{current=test;}
     }
-    if (current) lines.push(current);
-    var startY = y - ((lines.length - 1) * lineH) / 2;
-    for (var j = 0; j < lines.length; j++) {
-      if (strokeMode) { ctx.strokeText(lines[j], x, startY + j * lineH); }
-      else            { ctx.fillText(lines[j],   x, startY + j * lineH); }
+    if(current) lines.push(current);
+    var startY = y - ((lines.length-1)*lineH)/2;
+    for(var j=0;j<lines.length;j++){
+      if(strokeMode){ctx.strokeText(lines[j],x,startY+j*lineH);}
+      else{ctx.fillText(lines[j],x,startY+j*lineH);}
     }
   }
 
-  function generateVideo() {
-    if (!lastScript) { showVideoError('Generate a script first.'); return; }
+  async function generateVideo() {
+    if (!lastScript) { showVideoError('Generate or paste a script first.'); return; }
 
-    var section     = document.getElementById('videoSection').value;
-    var bgStyle     = document.getElementById('bgColor').value;
-    var capStyle    = document.getElementById('captionStyle').value;
-    var wpf         = parseInt(document.getElementById('wordsPerFrame').value);
-    var text        = getScriptSection(section);
-    var chunks      = chunkText(text, wpf);
+    var section  = document.getElementById('videoSection').value;
+    var capStyle = document.getElementById('captionStyle').value;
+    var wpf      = parseInt(document.getElementById('wordsPerFrame').value);
+    var overlay  = parseFloat(document.getElementById('overlayOpacity').value);
+    var text     = getScriptSection(section);
+    var chunks   = chunkText(text, wpf);
 
     if (!chunks.length) { showVideoError('No text found for that section.'); return; }
 
     var btn = document.getElementById('videoBtn');
     btn.disabled = true;
-    btn.textContent = '⏳ Building frames…';
+    btn.textContent = '⏳ Loading images...';
     hideVideoError();
 
-    var progressWrap = document.getElementById('progressWrap');
-    var progressBar  = document.getElementById('progressBar');
+    var progressWrap  = document.getElementById('progressWrap');
+    var progressBar   = document.getElementById('progressBar');
+    var progressLabel = document.getElementById('progressLabel');
     progressWrap.classList.add('visible');
+    progressLabel.style.display = 'block';
     progressBar.style.width = '0%';
 
     var canvas = document.getElementById('captionCanvas');
     videoFrames = [];
 
-    // Draw each frame
-    var i = 0;
-    function drawNext() {
-      if (i >= chunks.length) {
-        // Done
-        var pct = Math.round((i / chunks.length) * 100);
-        progressBar.style.width = pct + '%';
-        document.getElementById('frameCount').textContent = chunks.length;
-        document.getElementById('videoPreview').classList.add('visible');
-        // Show first frame
-        drawFrame(canvas, chunks[0], bgStyle, capStyle, 1/chunks.length);
-        btn.disabled = false;
-        btn.textContent = '🎬 Regenerate';
-        setTimeout(function() { progressWrap.classList.remove('visible'); }, 800);
-        return;
+    // Auto-search images if none loaded yet
+    if (selectedImageUrls.length === 0) {
+      var searchEl = document.getElementById('imageSearch');
+      if (searchEl.value.trim()) {
+        progressLabel.textContent = 'Fetching stock images...';
+        await fetchImages();
       }
-      videoFrames.push({ text: chunks[i], bg: bgStyle, cap: capStyle, progress: (i+1)/chunks.length });
-      progressBar.style.width = Math.round(((i+1)/chunks.length)*100) + '%';
-      i++;
-      setTimeout(drawNext, 8);
     }
-    drawNext();
+
+    // Load selected images
+    var imgElements = [];
+    if (selectedImageUrls.length > 0) {
+      progressLabel.textContent = 'Loading images...';
+      for (var ii = 0; ii < selectedImageUrls.length; ii++) {
+        try {
+          var img = await loadImage(selectedImageUrls[ii]);
+          imgElements.push(img);
+        } catch(e) {
+          console.warn('Could not load image:', selectedImageUrls[ii]);
+        }
+      }
+    }
+
+    progressLabel.textContent = 'Building video frames...';
+
+    // Build frames
+    for (var i = 0; i < chunks.length; i++) {
+      var progress = (i + 1) / chunks.length;
+      // Pick image — cycle through available images
+      var imgEl = imgElements.length > 0 ? imgElements[i % imgElements.length] : null;
+      // Ken Burns: zoom from 1.0 to 1.08 over the frame
+      var kenBurns = 1.0 + (0.08 * (i / Math.max(chunks.length - 1, 1)));
+      videoFrames.push({
+        text: chunks[i],
+        img: imgEl,
+        progress: progress,
+        cap: capStyle,
+        overlay: overlay,
+        kenBurns: kenBurns
+      });
+      progressBar.style.width = Math.round(progress * 100) + '%';
+      // Yield to browser
+      await new Promise(function(r){ setTimeout(r, 4); });
+    }
+
+    // Show first frame preview
+    var f0 = videoFrames[0];
+    if (f0.img) {
+      drawFrameWithImage(canvas, f0.text, f0.img, f0.progress, f0.cap, f0.overlay, f0.kenBurns);
+    } else {
+      drawFrameNoImage(canvas, f0.text, f0.progress, f0.cap);
+    }
+
+    document.getElementById('frameCount').textContent = chunks.length;
+    document.getElementById('videoPreview').classList.add('visible');
+
+    btn.disabled = false;
+    btn.textContent = '🎬 Regenerate';
+    progressLabel.style.display = 'none';
+    setTimeout(function(){ progressWrap.classList.remove('visible'); }, 600);
   }
 
   function previewAnimation() {
@@ -1444,60 +1594,48 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     if (animInterval) clearInterval(animInterval);
     var canvas = document.getElementById('captionCanvas');
     var i = 0;
-    var speed = 1200; // ms per frame
     animInterval = setInterval(function() {
       var f = videoFrames[i];
-      drawFrame(canvas, f.text, f.bg, f.cap, f.progress);
-      i++;
-      if (i >= videoFrames.length) {
-        clearInterval(animInterval);
-        animInterval = null;
+      if (f.img) {
+        drawFrameWithImage(canvas, f.text, f.img, f.progress, f.cap, f.overlay, f.kenBurns);
+      } else {
+        drawFrameNoImage(canvas, f.text, f.progress, f.cap);
       }
-    }, speed);
+      i++;
+      if (i >= videoFrames.length) { clearInterval(animInterval); animInterval = null; }
+    }, 1200);
   }
 
   function downloadVideo() {
     if (!videoFrames.length) { showVideoError('Generate the video first.'); return; }
     var canvas = document.getElementById('captionCanvas');
-
-    if (!window.MediaRecorder) {
-      showVideoError('Your browser does not support video recording. Try Chrome.');
-      return;
-    }
+    if (!window.MediaRecorder) { showVideoError('Try Chrome for video download.'); return; }
 
     var btn = document.querySelector('.btn-dl-video');
-    btn.textContent = '⏳ Encoding…';
+    btn.textContent = '⏳ Encoding...';
 
-    var stream = canvas.captureStream(1); // 1 fps — each frame = 1 second
+    var stream = canvas.captureStream(1);
     var rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
     var chunks = [];
-
-    rec.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
-    rec.onstop = function() {
-      var blob = new Blob(chunks, { type: 'video/webm' });
-      var url  = URL.createObjectURL(blob);
-      var a    = document.createElement('a');
-      a.href   = url;
-      a.download = 'leadai-video.webm';
-      a.click();
-      btn.textContent = '⬇ Download MP4';
+    rec.ondataavailable = function(e){ if(e.data.size>0) chunks.push(e.data); };
+    rec.onstop = function(){
+      var blob = new Blob(chunks,{type:'video/webm'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href=url; a.download='leadai-video.webm'; a.click();
+      btn.textContent = '⬇ Download Video';
     };
-
     rec.start();
     var i = 0;
-    var f = videoFrames[i];
-    drawFrame(canvas, f.text, f.bg, f.cap, f.progress);
-
     function nextFrame() {
+      var f = videoFrames[i];
+      if(f.img){drawFrameWithImage(canvas,f.text,f.img,f.progress,f.cap,f.overlay,f.kenBurns);}
+      else{drawFrameNoImage(canvas,f.text,f.progress,f.cap);}
       i++;
-      if (i < videoFrames.length) {
-        var fr = videoFrames[i];
-        drawFrame(canvas, fr.text, fr.bg, fr.cap, fr.progress);
-        setTimeout(nextFrame, 1000);
-      } else {
-        rec.stop();
-      }
+      if(i < videoFrames.length){ setTimeout(nextFrame, 1000); }
+      else { rec.stop(); }
     }
+    nextFrame();
     setTimeout(nextFrame, 1000);
   }
 
