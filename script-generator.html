@@ -1707,15 +1707,31 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
   function previewAnimation() {
     if (!videoFrames.length) return;
-    if (animInterval) clearInterval(animInterval);
+    var btn = document.querySelector('.btn-play-preview');
+
+    // If already playing — pause it
+    if (animInterval) {
+      clearInterval(animInterval);
+      animInterval = null;
+      if (btn) { btn.textContent = '▶ Preview Animation'; btn.style.opacity = '1'; }
+      return;
+    }
+
+    // Start playing
+    if (btn) { btn.textContent = '⏸ Pause'; btn.style.opacity = '0.85'; }
     var canvas = document.getElementById('captionCanvas');
     var i = 0;
+    var msPerFrame = 2000; // 2 seconds per frame — enough time to read each caption
+
     animInterval = setInterval(function() {
-      var f = videoFrames[i];
       renderFrame(canvas, videoFrames[i]);
       i++;
-      if (i >= videoFrames.length) { clearInterval(animInterval); animInterval = null; }
-    }, 1200);
+      if (i >= videoFrames.length) {
+        clearInterval(animInterval);
+        animInterval = null;
+        if (btn) { btn.textContent = '▶ Preview Animation'; btn.style.opacity = '1'; }
+      }
+    }, msPerFrame);
   }
 
   function downloadVideo() {
