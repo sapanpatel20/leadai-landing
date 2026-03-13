@@ -867,10 +867,9 @@ Book a free consultation at leadai.guru"
   <!-- Voice Generation Card (Week 2) -->
   <div class="voice-card" id="voiceCard">
     <div class="voice-header">
-      🎙 Step 2 — Generate AI Voiceover
+      🎙 Step 2 — Text to Speech Voiceover
     </div>
     <div class="voice-body">
-
       <div class="voice-grid">
         <div class="form-group">
           <label for="voiceId">Voice</label>
@@ -888,17 +887,40 @@ Book a free consultation at leadai.guru"
           </select>
         </div>
       </div>
+      <div class="voice-grid" style="margin-top:0;">
+        <div class="form-group">
+          <label for="voiceRate">Speed</label>
+          <select id="voiceRate">
+            <option value="0.8">Slow</option>
+            <option value="1" selected>Normal</option>
+            <option value="1.2">Fast</option>
+            <option value="1.5">Very Fast</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="voicePitch">Pitch</label>
+          <select id="voicePitch">
+            <option value="0.8">Low</option>
+            <option value="1" selected>Normal</option>
+            <option value="1.2">High</option>
+          </select>
+        </div>
+      </div>
       <button class="btn-voice" id="voiceBtn" onclick="generateVoice()">
-        🎙 Generate Voiceover
+        🎙 Play Voiceover
+      </button>
+      <button class="btn-voice" id="stopBtn" onclick="stopVoice()" style="display:none;background:rgba(255,80,80,0.1);border-color:rgba(255,80,80,0.3);color:rgba(255,80,80,0.9);">
+        ⏹ Stop
       </button>
       <div class="voice-error" id="voiceError"></div>
       <div class="audio-wrap" id="audioWrap">
         <div class="audio-label">
-          <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
-          Voiceover ready — play or download
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;animation:pulse 1.5s infinite;"></span>
+          <span id="voiceStatusText">Speaking your script...</span>
         </div>
-        <audio id="audioPlayer" controls></audio>
-        <a class="btn-download" id="downloadBtn" download="leadai-voiceover.mp3">⬇ Download MP3</a>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.25rem;">
+          💡 To record: use your phone's screen recorder, or a free tool like <strong style="color:var(--text);">Audacity</strong> to capture the audio while it plays.
+        </div>
       </div>
     </div>
   </div>
@@ -967,7 +989,7 @@ Book a free consultation at leadai.guru"
           <button class="btn-dl-video" onclick="downloadVideo()">⬇ Download MP4</button>
         </div>
         <div class="video-note">
-          💡 For best results: pair this with your ElevenLabs voiceover. Post the MP4 + audio together on TikTok/Reels.
+          💡 For best results: play the voiceover on your device while recording the video with a screen recorder.
         </div>
       </div>
     </div>
@@ -1152,55 +1174,80 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     if (e.key === 'Enter') generateScript();
   });
 
-  async function generateVoice() {
-    if (!lastScript) { showVoiceError('Generate a script first.'); return; }
-    const section = document.getElementById('voiceSection').value;
-    const voiceId = document.getElementById('voiceId').value;
-    let textToRead = lastScript;
+  function generateVoice() {
+    if (!lastScript) { showVoiceError('Generate or paste a script first.'); return; }
+    if (!window.speechSynthesis) { showVoiceError('Your browser does not support text-to-speech. Please use Chrome.'); return; }
+
+    var section = document.getElementById('voiceSection').value;
+    var rate    = parseFloat(document.getElementById('voiceRate').value);
+    var pitch   = parseFloat(document.getElementById('voicePitch').value);
+    var voiceIndex = parseInt(document.getElementById('voiceId').value) || 0;
+
+    // Extract the right section
+    var textToRead = lastScript;
     if (section !== 'full') {
-      const key = section.toUpperCase();
-      const match = lastScript.match(new RegExp('\\[' + key + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
+      var key = section.toUpperCase();
+      var match = lastScript.match(new RegExp('\\[' + key + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
       textToRead = match ? match[1].trim() : lastScript;
     } else {
-      let parts = [];
+      var parts = [];
       ['HOOK','BODY','CTA'].forEach(function(k) {
         var m = lastScript.match(new RegExp('\\[' + k + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
         if (m) parts.push(m[1].trim());
       });
-      if (parts.length) textToRead = parts.join('\n\n');
+      if (parts.length) textToRead = parts.join(' ');
     }
-    const btn = document.getElementById('voiceBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ Generating voice…';
+
+    // Clean text — remove bracket tags
+    textToRead = textToRead.replace(/\[\w+\]/g, '').replace(/\s+/g, ' ').trim();
+
     hideVoiceError();
-    document.getElementById('audioWrap').classList.remove('visible');
-    try {
-      const res = await fetch('/api/voice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: textToRead, voiceId: voiceId })
-      });
-      if (!res.ok) { const e = await res.json().catch(function(){return {};}); throw new Error(e.error || 'Voice generation failed'); }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const player = document.getElementById('audioPlayer');
-      player.src = url;
-      const dl = document.getElementById('downloadBtn');
-      dl.href = url;
-      document.getElementById('audioWrap').classList.add('visible');
-      player.play();
+    window.speechSynthesis.cancel();
+
+    var utter = new SpeechSynthesisUtterance(textToRead);
+    utter.rate  = rate;
+    utter.pitch = pitch;
+
+    // Use selected voice
+    var voices = window.speechSynthesis.getVoices();
+    if (voices[voiceIndex]) utter.voice = voices[voiceIndex];
+
+    // UI states
+    var btn  = document.getElementById('voiceBtn');
+    var stop = document.getElementById('stopBtn');
+    btn.style.display  = 'none';
+    stop.style.display = 'flex';
+    document.getElementById('audioWrap').classList.add('visible');
+    document.getElementById('voiceStatusText').textContent = 'Speaking your script...';
+
+    utter.onend = function() {
+      btn.style.display  = 'flex';
+      stop.style.display = 'none';
+      document.getElementById('voiceStatusText').textContent = 'Done! Use screen recorder to capture audio.';
       document.getElementById('videoCard').classList.add('visible');
-    } catch(err) {
-      showVoiceError('Could not generate voice: ' + err.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '🎙 Generate Voiceover';
-    }
+    };
+
+    utter.onerror = function(e) {
+      btn.style.display  = 'flex';
+      stop.style.display = 'none';
+      showVoiceError('Speech error: ' + e.error);
+    };
+
+    window.speechSynthesis.speak(utter);
+  }
+
+  function stopVoice() {
+    window.speechSynthesis.cancel();
+    var btn  = document.getElementById('voiceBtn');
+    var stop = document.getElementById('stopBtn');
+    btn.style.display  = 'flex';
+    stop.style.display = 'none';
+    document.getElementById('voiceStatusText').textContent = 'Stopped.';
   }
 
   function showVoiceError(msg) {
     var box = document.getElementById('voiceError');
-    box.textContent = '⚠ ' + msg;
+    box.textContent = '\u26a0 ' + msg;
     box.classList.add('visible');
   }
 
@@ -1465,39 +1512,32 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   }
 
 
-  // ── Load real voices from ElevenLabs on page load ──
-  async function loadVoices() {
+  // ── Load browser built-in voices ──
+  function loadVoices() {
     var select = document.getElementById('voiceId');
-    try {
-      var res = await fetch('/api/voices');
-      if (!res.ok) throw new Error('Failed');
-      var data = await res.json();
-      select.innerHTML = '';
-      if (data.voices && data.voices.length > 0) {
-        data.voices.forEach(function(v) {
-          var opt = document.createElement('option');
-          opt.value = v.id;
-          opt.textContent = v.name;
-          select.appendChild(opt);
-        });
-      } else {
-        select.innerHTML = '<option value="">No voices found</option>';
+    var voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return;
+    select.innerHTML = '';
+    voices.forEach(function(v, i) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = v.name + (v.lang ? ' (' + v.lang + ')' : '');
+      // Default to first English voice
+      if (v.lang && v.lang.startsWith('en') && !select.querySelector('[data-default]')) {
+        opt.selected = true;
+        opt.setAttribute('data-default', '1');
       }
-    } catch(e) {
-      // Fallback to known stable voices if API fails
-      select.innerHTML = [
-        ['Rachel', 'rachel'],
-        ['Domi', 'domi'],
-        ['Bella', 'bella'],
-        ['Antoni', 'antoni'],
-        ['Josh', 'josh'],
-        ['Arnold', 'arnold']
-      ].map(function(v) {
-        return '<option value="' + v[1] + '">' + v[0] + '</option>';
-      }).join('');
+      select.appendChild(opt);
+    });
+    if (!select.options.length) {
+      select.innerHTML = '<option value="0">Default Voice</option>';
     }
   }
-  loadVoices();
+  // Voices load async in some browsers
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+  setTimeout(loadVoices, 200);
 
 
   // ── Mode switching ──
