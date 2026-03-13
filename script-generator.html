@@ -743,6 +743,49 @@
     .usage-pip { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); }
     .usage-pip.used { background: var(--accent); }
 
+
+    /* ── Background source tabs ── */
+    .bg-source-tabs { display: flex; gap: 0; background: rgba(255,255,255,0.04); border: 0.5px solid var(--border); border-radius: 8px; padding: 3px; }
+    .bg-tab { flex: 1; padding: 0.45rem 0.5rem; border-radius: 6px; border: none; font-family: var(--font-body); font-size: 0.78rem; font-weight: 500; cursor: pointer; background: transparent; color: var(--muted); transition: all 0.18s; white-space: nowrap; }
+    .bg-tab.active { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border-hover); }
+    .bg-panel { display: none; }
+    .bg-panel.active { display: block; }
+
+    /* ── Upload panel ── */
+    .upload-drop-zone { border: 1.5px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+    .upload-drop-zone:hover, .upload-drop-zone.drag-over { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.04); }
+    .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .upload-hint { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+    .upload-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin-top: 0.75rem; }
+    .upload-thumb { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s; }
+    .upload-thumb:hover { border-color: rgba(0,229,160,0.4); }
+    .upload-thumb.selected { border-color: var(--accent); }
+    .upload-thumb img, .upload-thumb video { width: 100%; height: 100%; object-fit: cover; }
+    .upload-thumb .thumb-check { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: var(--accent); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.65rem; color: #04090F; font-weight: 700; }
+    .upload-thumb.selected .thumb-check { display: flex; }
+    .upload-type-badge { position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.55rem; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ── Webcam panel ── */
+    .webcam-wrap { position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4/3; }
+    #webcamFeed { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
+    .webcam-controls { display: flex; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .btn-webcam { flex: 1; padding: 0.65rem 1rem; border-radius: 8px; border: 0.5px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text); font-family: var(--font-body); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+    .btn-webcam:hover { background: rgba(255,255,255,0.08); border-color: var(--border-hover); }
+    .btn-webcam.primary { background: rgba(0,229,160,0.12); border-color: rgba(0,229,160,0.35); color: var(--accent); }
+    .btn-webcam.primary:hover { background: rgba(0,229,160,0.2); }
+    .btn-webcam.rec { background: rgba(255,60,60,0.12); border-color: rgba(255,60,60,0.35); color: #FF5050; }
+    .btn-webcam.rec:hover { background: rgba(255,60,60,0.22); }
+    .webcam-shots { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.5rem; margin-top: 0.75rem; }
+    .webcam-shot { position: relative; aspect-ratio: 4/3; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; }
+    .webcam-shot:hover { border-color: rgba(0,229,160,0.4); }
+    .webcam-shot.selected { border-color: var(--accent); }
+    .webcam-shot img { width: 100%; height: 100%; object-fit: cover; }
+    .webcam-shot .shot-check { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: var(--accent); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.65rem; color: #04090F; font-weight: 700; }
+    .webcam-shot.selected .shot-check { display: flex; }
+    .rec-dot { display: inline-block; width: 8px; height: 8px; background: #FF5050; border-radius: 50%; animation: pulse 1s infinite; margin-right: 4px; }
+    .webcam-status { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; min-height: 1.2em; }
+    #webcamStartBtn { margin-bottom: 0.75rem; }
+
   </style>
 </head>
 <body>
@@ -1453,6 +1496,201 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   var allPhotos = [];
   var allVideos = [];
   var selectedVideoUrls = [];
+  var localMediaElements = [];  // stores {type, el, blobUrl, name} from upload/webcam
+
+  // ── Background source switcher ──
+  function switchBgSource(src) {
+    ['pexels','upload','webcam'].forEach(function(s) {
+      document.getElementById('bgtab-'+s).classList.toggle('active', s === src);
+      document.getElementById('bgpanel-'+s).classList.toggle('active', s === src);
+    });
+    if (src === 'webcam') {
+      // don't auto-start, just show the button
+    }
+  }
+
+  // ── File upload handler ──
+  function handleFileUpload(files) {
+    if (!files || !files.length) return;
+    var grid = document.getElementById('uploadGrid');
+    var countEl = document.getElementById('uploadCount');
+    Array.from(files).forEach(function(file) {
+      var isVideo = file.type.startsWith('video/');
+      var blobUrl = URL.createObjectURL(file);
+      // Pre-load the element
+      var el;
+      if (isVideo) {
+        el = document.createElement('video');
+        el.src = blobUrl; el.muted = true; el.loop = true; el.playsInline = true;
+        el.crossOrigin = 'anonymous';
+      } else {
+        el = document.createElement('img');
+        el.src = blobUrl; el.crossOrigin = 'anonymous';
+      }
+      var entry = { type: isVideo ? 'video' : 'image', el: el, blobUrl: blobUrl, name: file.name, selected: false };
+      localMediaElements.push(entry);
+
+      // Thumbnail
+      var thumb = document.createElement('div');
+      thumb.className = 'upload-thumb';
+      var check = document.createElement('div');
+      check.className = 'thumb-check'; check.textContent = '\u2713';
+      var badge = document.createElement('div');
+      badge.className = 'upload-type-badge'; badge.textContent = isVideo ? 'VID' : 'IMG';
+      if (isVideo) {
+        var tv = document.createElement('video');
+        tv.src = blobUrl; tv.muted = true; tv.playsInline = true; tv.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        thumb.appendChild(tv);
+      } else {
+        var ti = document.createElement('img');
+        ti.src = blobUrl; ti.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        thumb.appendChild(ti);
+      }
+      thumb.appendChild(check); thumb.appendChild(badge);
+      thumb.onclick = (function(e, t) { return function() { e.selected = !e.selected; t.classList.toggle('selected', e.selected); updateUploadCount(); }; })(entry, thumb);
+      grid.appendChild(thumb);
+    });
+    // Auto-select all new uploads
+    localMediaElements.forEach(function(e) { e.selected = true; });
+    grid.querySelectorAll('.upload-thumb').forEach(function(t) { t.classList.add('selected'); });
+    updateUploadCount();
+
+    // Setup drag-over on drop zone
+    var dz = document.getElementById('uploadDropZone');
+    dz.ondragover = function(e) { e.preventDefault(); dz.classList.add('drag-over'); };
+    dz.ondragleave = function() { dz.classList.remove('drag-over'); };
+    dz.ondrop = function(e) { e.preventDefault(); dz.classList.remove('drag-over'); handleFileUpload(e.dataTransfer.files); };
+  }
+
+  function updateUploadCount() {
+    var sel = localMediaElements.filter(function(e){ return e.selected; }).length;
+    var countEl = document.getElementById('uploadCount');
+    if (countEl) countEl.textContent = sel + ' of ' + localMediaElements.length + ' file(s) selected for background';
+  }
+
+  // ── Webcam ──
+  var webcamStream = null;
+  var mediaRecorder = null;
+  var recordedChunks = [];
+  var webcamShots = []; // {type, el, blobUrl, selected}
+
+  function startWebcam() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+      .then(function(stream) {
+        webcamStream = stream;
+        var feed = document.getElementById('webcamFeed');
+        feed.srcObject = stream;
+        document.getElementById('webcamStartBtn').style.display = 'none';
+        document.getElementById('webcamActiveArea').style.display = 'block';
+        document.getElementById('webcamStatus').textContent = 'Camera ready \u2014 snap a photo or record a short clip.';
+      })
+      .catch(function(err) {
+        alert('Camera access denied or not available.\n\n' + err.message);
+      });
+  }
+
+  function stopWebcam() {
+    if (webcamStream) { webcamStream.getTracks().forEach(function(t){ t.stop(); }); webcamStream = null; }
+    document.getElementById('webcamFeed').srcObject = null;
+    document.getElementById('webcamActiveArea').style.display = 'none';
+    document.getElementById('webcamStartBtn').style.display = 'block';
+    document.getElementById('webcamStatus').textContent = '';
+    stopRecordingInternal();
+  }
+
+  function snapPhoto() {
+    var feed = document.getElementById('webcamFeed');
+    var snap = document.createElement('canvas');
+    snap.width = feed.videoWidth || 640; snap.height = feed.videoHeight || 480;
+    var ctx = snap.getContext('2d');
+    // Mirror to match natural orientation
+    ctx.translate(snap.width, 0); ctx.scale(-1, 1);
+    ctx.drawImage(feed, 0, 0, snap.width, snap.height);
+    snap.toBlob(function(blob) {
+      var url = URL.createObjectURL(blob);
+      var img = document.createElement('img');
+      img.src = url; img.crossOrigin = 'anonymous';
+      var entry = { type: 'image', el: img, blobUrl: url, selected: true };
+      webcamShots.push(entry);
+      addWebcamShotThumb(entry, 'Photo');
+      document.getElementById('webcamStatus').textContent = 'Photo snapped! Snap more or record a clip.';
+      updateWebcamCount();
+    }, 'image/jpeg', 0.92);
+  }
+
+  function toggleRecord() {
+    var btn = document.getElementById('recordBtn');
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      stopRecordingInternal();
+      btn.innerHTML = '&#9679; Record Clip';
+      btn.classList.remove('rec');
+    } else {
+      startRecordingInternal();
+      btn.innerHTML = '<span class="rec-dot"></span> Stop Recording';
+      btn.classList.add('rec');
+      document.getElementById('webcamStatus').textContent = 'Recording... click Stop Recording when done.';
+    }
+  }
+
+  function startRecordingInternal() {
+    if (!webcamStream) return;
+    recordedChunks = [];
+    var options = { mimeType: 'video/webm;codecs=vp9' };
+    try { mediaRecorder = new MediaRecorder(webcamStream, options); }
+    catch(e) { mediaRecorder = new MediaRecorder(webcamStream); }
+    mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = function() {
+      var blob = new Blob(recordedChunks, { type: 'video/webm' });
+      var url = URL.createObjectURL(blob);
+      var vid = document.createElement('video');
+      vid.src = url; vid.muted = true; vid.loop = true; vid.playsInline = true; vid.crossOrigin = 'anonymous';
+      var entry = { type: 'video', el: vid, blobUrl: url, selected: true };
+      webcamShots.push(entry);
+      addWebcamShotThumb(entry, 'Clip');
+      document.getElementById('webcamStatus').textContent = 'Clip saved! Select it then Generate Video.';
+      updateWebcamCount();
+    };
+    mediaRecorder.start();
+  }
+
+  function stopRecordingInternal() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); }
+  }
+
+  function addWebcamShotThumb(entry, label) {
+    var grid = document.getElementById('webcamShots');
+    var div = document.createElement('div');
+    div.className = 'webcam-shot selected';
+    var check = document.createElement('div');
+    check.className = 'shot-check'; check.textContent = '\u2713';
+    if (entry.type === 'video') {
+      var tv = document.createElement('video');
+      tv.src = entry.blobUrl; tv.muted = true; tv.playsInline = true; tv.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      div.appendChild(tv);
+    } else {
+      var ti = document.createElement('img');
+      ti.src = entry.blobUrl; ti.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+      div.appendChild(ti);
+    }
+    check.style.cssText = 'position:absolute;top:4px;right:4px;width:20px;height:20px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#04090F;font-weight:700;';
+    div.appendChild(check);
+    div.onclick = (function(e, d, c) { return function() { e.selected = !e.selected; d.classList.toggle('selected', e.selected); c.style.display = e.selected ? 'flex' : 'none'; updateWebcamCount(); }; })(entry, div, check);
+    grid.appendChild(div);
+  }
+
+  function updateWebcamCount() {
+    var sel = webcamShots.filter(function(e){ return e.selected; }).length;
+    var el = document.getElementById('webcamCount');
+    if (el) el.textContent = sel + ' of ' + webcamShots.length + ' webcam shot(s) selected';
+  }
+
+  // ── Collect all selected local media (upload + webcam) ──
+  function getSelectedLocalMedia() {
+    var result = [];
+    localMediaElements.forEach(function(e) { if (e.selected) result.push(e); });
+    webcamShots.forEach(function(e) { if (e.selected) result.push(e); });
+    return result;
+  }
 
   function switchMediaTab(tab) {
     currentMediaTab = tab;
@@ -1785,9 +2023,20 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
         }
       }
 
-      // Load media elements
+      // Load media elements — local (upload/webcam) takes priority over Pexels
       var mediaElements = [];
-      if (selectedVideoUrls.length > 0) {
+      var localSelected = getSelectedLocalMedia();
+      if (localSelected.length > 0) {
+        progressLabel.textContent = 'Using your uploaded/webcam media...';
+        // For videos, ensure they are playing
+        for (var ii = 0; ii < localSelected.length; ii++) {
+          var le = localSelected[ii];
+          if (le.type === 'video') {
+            try { await le.el.play(); } catch(e) {}
+          }
+          mediaElements.push({ type: le.type, el: le.el });
+        }
+      } else if (selectedVideoUrls.length > 0) {
         progressLabel.textContent = 'Loading background videos...';
         for (var ii = 0; ii < selectedVideoUrls.length; ii++) {
           try {
