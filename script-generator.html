@@ -577,6 +577,86 @@
       .stats-row { grid-template-columns: 1fr; }
       nav { padding: 1rem 1.25rem; }
     }
+
+    /* ── Video card ── */
+    .video-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 1.5rem;
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+    .video-card.visible { display: block; }
+    .video-header {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 0.5px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      font-size: 0.75rem; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    }
+    .video-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-video {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      background: rgba(255,180,0,0.1);
+      border: 0.5px solid rgba(255,180,0,0.35);
+      color: #FFB400;
+      font-family: var(--font-body); font-weight: 500; font-size: 0.95rem;
+      padding: 0.85rem 1.5rem; border-radius: 10px;
+      cursor: pointer; transition: all 0.2s; width: 100%;
+    }
+    .btn-video:hover:not(:disabled) { background: rgba(255,180,0,0.18); transform: translateY(-1px); }
+    .btn-video:disabled { opacity: 0.4; cursor: not-allowed; }
+    .video-preview {
+      display: none; flex-direction: column; gap: 0.85rem;
+      background: rgba(255,255,255,0.02);
+      border: 0.5px solid var(--border); border-radius: 10px; padding: 1.25rem;
+    }
+    .video-preview.visible { display: flex; animation: fadeUp 0.3s ease both; }
+    .canvas-wrap {
+      display: flex; justify-content: center;
+      background: #000; border-radius: 8px; overflow: hidden;
+    }
+    #captionCanvas { display: block; max-width: 100%; height: auto; }
+    .video-controls { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .btn-play-preview {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      background: rgba(255,255,255,0.05); border: 0.5px solid var(--border);
+      color: var(--text); font-family: var(--font-body); font-size: 0.85rem;
+      padding: 0.65rem 1rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-play-preview:hover { background: rgba(255,255,255,0.1); }
+    .btn-dl-video {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      background: rgba(255,180,0,0.1); border: 0.5px solid rgba(255,180,0,0.3);
+      color: #FFB400; font-family: var(--font-body); font-size: 0.85rem;
+      padding: 0.65rem 1rem; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-dl-video:hover { background: rgba(255,180,0,0.18); }
+    .video-note {
+      font-size: 0.75rem; color: var(--muted);
+      background: rgba(255,180,0,0.05); border: 0.5px solid rgba(255,180,0,0.15);
+      border-radius: 6px; padding: 0.6rem 0.85rem;
+    }
+    .video-error {
+      background: rgba(255,80,80,0.07); border: 0.5px solid rgba(255,80,80,0.25);
+      border-radius: 8px; padding: 0.75rem 1rem;
+      color: var(--red); font-size: 0.85rem; display: none;
+    }
+    .video-error.visible { display: block; }
+    .progress-bar-wrap {
+      height: 4px; background: rgba(255,255,255,0.06);
+      border-radius: 2px; overflow: hidden; display: none;
+    }
+    .progress-bar-wrap.visible { display: block; }
+    .progress-bar {
+      height: 100%; width: 0%; background: #FFB400;
+      border-radius: 2px; transition: width 0.3s;
+    }
+
   </style>
 </head>
 <body>
@@ -738,6 +818,76 @@
     </div>
   </div>
 
+  <!-- Video Generation Card (Week 3) -->
+  <div class="video-card" id="videoCard">
+    <div class="video-header">
+      🎬 Step 3 — Generate Caption Video
+    </div>
+    <div class="video-body">
+      <div class="style-grid">
+        <div class="form-group">
+          <label for="bgColor">Background Style</label>
+          <select id="bgColor">
+            <option value="dark">Dark (black) — TikTok style</option>
+            <option value="gradient_blue">Blue gradient — professional</option>
+            <option value="gradient_green">Green gradient — real estate</option>
+            <option value="gradient_red">Red gradient — urgent/sales</option>
+            <option value="white">White — clean minimal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="captionStyle">Caption Style</label>
+          <select id="captionStyle">
+            <option value="bold_yellow">Bold yellow — viral TikTok</option>
+            <option value="bold_white">Bold white — clean</option>
+            <option value="bold_green">Bold green — LeadAI brand</option>
+            <option value="subtitle">Subtitle bar — news style</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="videoSection">Script section</label>
+          <select id="videoSection">
+            <option value="full">Full script</option>
+            <option value="hook">Hook only</option>
+            <option value="body">Body only</option>
+            <option value="cta">CTA only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="wordsPerFrame">Words per caption</label>
+          <select id="wordsPerFrame">
+            <option value="3">3 words — fast paced</option>
+            <option value="5" selected>5 words — balanced</option>
+            <option value="8">8 words — slower</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-video" id="videoBtn" onclick="generateVideo()">
+        🎬 Generate Caption Video
+      </button>
+      <div class="progress-bar-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="video-error" id="videoError"></div>
+      <div class="video-preview" id="videoPreview">
+        <div class="audio-label">
+          <span style="width:8px;height:8px;border-radius:50%;background:#FFB400;display:inline-block;"></span>
+          Preview — <span id="frameCount">0</span> frames ready
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="captionCanvas" width="1080" height="1920" style="width:270px;height:480px;"></canvas>
+        </div>
+        <div class="video-controls">
+          <button class="btn-play-preview" onclick="previewAnimation()">▶ Preview Animation</button>
+          <button class="btn-dl-video" onclick="downloadVideo()">⬇ Download MP4</button>
+        </div>
+        <div class="video-note">
+          💡 For best results: pair this with your ElevenLabs voiceover. Post the MP4 + audio together on TikTok/Reels.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Next steps -->
   <div class="next-steps" id="nextSteps">
     <div class="next-steps-title">Your build roadmap</div>
@@ -751,8 +901,8 @@
         ElevenLabs voiceover — done!
       </div>
       <div class="next-item">
-        <span class="week-badge w3">Week 3</span>
-        Add video generation — audio becomes video
+        <span class="week-badge done">Week 3 ✓</span>
+        Caption video generator — done!
       </div>
       <div class="next-item">
         <span class="week-badge w4">Week 4</span>
@@ -977,6 +1127,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       dl.href = url;
       document.getElementById('audioWrap').classList.add('visible');
       player.play();
+      document.getElementById('videoCard').classList.add('visible');
     } catch(err) {
       showVoiceError('Could not generate voice: ' + err.message);
     } finally {
@@ -993,6 +1144,262 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
   function hideVoiceError() {
     document.getElementById('voiceError').classList.remove('visible');
+  }
+
+
+  // ── Video Generation (Week 3) ──
+  let videoFrames = [];
+  let animInterval = null;
+
+  function getScriptSection(section) {
+    if (!lastScript) return '';
+    if (section === 'full') {
+      var parts = [];
+      ['HOOK','BODY','CTA'].forEach(function(k) {
+        var m = lastScript.match(new RegExp('\\[' + k + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
+        if (m) parts.push(m[1].trim());
+      });
+      return parts.join(' ') || lastScript;
+    }
+    var key = section.toUpperCase();
+    var match = lastScript.match(new RegExp('\\[' + key + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
+    return match ? match[1].trim() : lastScript;
+  }
+
+  function chunkText(text, wordsPerChunk) {
+    // Clean up the text
+    var clean = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+    var words = clean.split(' ').filter(function(w) { return w.length > 0; });
+    var chunks = [];
+    for (var i = 0; i < words.length; i += wordsPerChunk) {
+      chunks.push(words.slice(i, i + wordsPerChunk).join(' '));
+    }
+    return chunks;
+  }
+
+  function getBgStyle(style) {
+    var styles = {
+      'dark': { type: 'solid', color: '#000000' },
+      'gradient_blue': { type: 'gradient', c1: '#0A0F2E', c2: '#1A3A6E' },
+      'gradient_green': { type: 'gradient', c1: '#041A0C', c2: '#0D4A20' },
+      'gradient_red': { type: 'gradient', c1: '#1A0A0A', c2: '#4A1010' },
+      'white': { type: 'solid', color: '#FFFFFF' }
+    };
+    return styles[style] || styles['dark'];
+  }
+
+  function getCaptionStyle(style) {
+    var styles = {
+      'bold_yellow': { color: '#FFE600', stroke: '#000000', size: 90, weight: '900' },
+      'bold_white':  { color: '#FFFFFF', stroke: '#000000', size: 90, weight: '900' },
+      'bold_green':  { color: '#00E5A0', stroke: '#000000', size: 90, weight: '900' },
+      'subtitle':    { color: '#FFFFFF', stroke: null, size: 60, weight: '600', bar: true }
+    };
+    return styles[style] || styles['bold_yellow'];
+  }
+
+  function drawFrame(canvas, text, bgStyleKey, captionStyleKey, progress) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    var bg = getBgStyle(bgStyleKey);
+    if (bg.type === 'gradient') {
+      var grd = ctx.createLinearGradient(0, 0, 0, H);
+      grd.addColorStop(0, bg.c1);
+      grd.addColorStop(1, bg.c2);
+      ctx.fillStyle = grd;
+    } else {
+      ctx.fillStyle = bg.color;
+    }
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle grid overlay for depth
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    for (var x = 0; x < W; x += 80) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (var y = 0; y < H; y += 80) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // Logo watermark top
+    ctx.font = '500 42px Syne, sans-serif';
+    ctx.fillStyle = 'rgba(0,229,160,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText('LeadAI', W/2, 100);
+
+    var cap = getCaptionStyle(captionStyleKey);
+
+    if (cap.bar) {
+      // Subtitle bar style
+      var barH = 140;
+      var barY = H * 0.72;
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(0, barY, W, barH);
+      ctx.font = cap.weight + ' ' + cap.size + 'px DM Sans, sans-serif';
+      ctx.fillStyle = cap.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      wrapText(ctx, text, W/2, barY + barH/2, W - 80, cap.size + 10);
+    } else {
+      // Bold floating caption in center
+      ctx.font = cap.weight + ' ' + cap.size + 'px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Shadow / stroke for readability
+      if (cap.stroke) {
+        ctx.strokeStyle = cap.stroke;
+        ctx.lineWidth = 18;
+        ctx.lineJoin = 'round';
+        wrapText(ctx, text, W/2, H/2, W - 120, cap.size + 16, true);
+      }
+      ctx.fillStyle = cap.color;
+      wrapText(ctx, text, W/2, H/2, W - 120, cap.size + 16, false);
+    }
+
+    // Progress bar at bottom
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillRect(60, H - 80, W - 120, 8);
+    ctx.fillStyle = '#00E5A0';
+    ctx.fillRect(60, H - 80, (W - 120) * progress, 8);
+  }
+
+  function wrapText(ctx, text, x, y, maxWidth, lineH, strokeMode) {
+    var words = text.split(' ');
+    var lines = [];
+    var current = '';
+    for (var i = 0; i < words.length; i++) {
+      var test = current ? current + ' ' + words[i] : words[i];
+      if (ctx.measureText(test).width > maxWidth && current) {
+        lines.push(current); current = words[i];
+      } else { current = test; }
+    }
+    if (current) lines.push(current);
+    var startY = y - ((lines.length - 1) * lineH) / 2;
+    for (var j = 0; j < lines.length; j++) {
+      if (strokeMode) { ctx.strokeText(lines[j], x, startY + j * lineH); }
+      else            { ctx.fillText(lines[j],   x, startY + j * lineH); }
+    }
+  }
+
+  function generateVideo() {
+    if (!lastScript) { showVideoError('Generate a script first.'); return; }
+
+    var section     = document.getElementById('videoSection').value;
+    var bgStyle     = document.getElementById('bgColor').value;
+    var capStyle    = document.getElementById('captionStyle').value;
+    var wpf         = parseInt(document.getElementById('wordsPerFrame').value);
+    var text        = getScriptSection(section);
+    var chunks      = chunkText(text, wpf);
+
+    if (!chunks.length) { showVideoError('No text found for that section.'); return; }
+
+    var btn = document.getElementById('videoBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Building frames…';
+    hideVideoError();
+
+    var progressWrap = document.getElementById('progressWrap');
+    var progressBar  = document.getElementById('progressBar');
+    progressWrap.classList.add('visible');
+    progressBar.style.width = '0%';
+
+    var canvas = document.getElementById('captionCanvas');
+    videoFrames = [];
+
+    // Draw each frame
+    var i = 0;
+    function drawNext() {
+      if (i >= chunks.length) {
+        // Done
+        var pct = Math.round((i / chunks.length) * 100);
+        progressBar.style.width = pct + '%';
+        document.getElementById('frameCount').textContent = chunks.length;
+        document.getElementById('videoPreview').classList.add('visible');
+        // Show first frame
+        drawFrame(canvas, chunks[0], bgStyle, capStyle, 1/chunks.length);
+        btn.disabled = false;
+        btn.textContent = '🎬 Regenerate';
+        setTimeout(function() { progressWrap.classList.remove('visible'); }, 800);
+        return;
+      }
+      videoFrames.push({ text: chunks[i], bg: bgStyle, cap: capStyle, progress: (i+1)/chunks.length });
+      progressBar.style.width = Math.round(((i+1)/chunks.length)*100) + '%';
+      i++;
+      setTimeout(drawNext, 8);
+    }
+    drawNext();
+  }
+
+  function previewAnimation() {
+    if (!videoFrames.length) return;
+    if (animInterval) clearInterval(animInterval);
+    var canvas = document.getElementById('captionCanvas');
+    var i = 0;
+    var speed = 1200; // ms per frame
+    animInterval = setInterval(function() {
+      var f = videoFrames[i];
+      drawFrame(canvas, f.text, f.bg, f.cap, f.progress);
+      i++;
+      if (i >= videoFrames.length) {
+        clearInterval(animInterval);
+        animInterval = null;
+      }
+    }, speed);
+  }
+
+  function downloadVideo() {
+    if (!videoFrames.length) { showVideoError('Generate the video first.'); return; }
+    var canvas = document.getElementById('captionCanvas');
+
+    if (!window.MediaRecorder) {
+      showVideoError('Your browser does not support video recording. Try Chrome.');
+      return;
+    }
+
+    var btn = document.querySelector('.btn-dl-video');
+    btn.textContent = '⏳ Encoding…';
+
+    var stream = canvas.captureStream(1); // 1 fps — each frame = 1 second
+    var rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+    var chunks = [];
+
+    rec.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
+    rec.onstop = function() {
+      var blob = new Blob(chunks, { type: 'video/webm' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href   = url;
+      a.download = 'leadai-video.webm';
+      a.click();
+      btn.textContent = '⬇ Download MP4';
+    };
+
+    rec.start();
+    var i = 0;
+    var f = videoFrames[i];
+    drawFrame(canvas, f.text, f.bg, f.cap, f.progress);
+
+    function nextFrame() {
+      i++;
+      if (i < videoFrames.length) {
+        var fr = videoFrames[i];
+        drawFrame(canvas, fr.text, fr.bg, fr.cap, fr.progress);
+        setTimeout(nextFrame, 1000);
+      } else {
+        rec.stop();
+      }
+    }
+    setTimeout(nextFrame, 1000);
+  }
+
+  function showVideoError(msg) {
+    var box = document.getElementById('videoError');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('visible');
+  }
+
+  function hideVideoError() {
+    document.getElementById('videoError').classList.remove('visible');
   }
 
 </script>
