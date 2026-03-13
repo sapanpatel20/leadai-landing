@@ -1212,20 +1212,9 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     var pitch   = parseFloat(document.getElementById('voicePitch').value);
     var voiceIndex = parseInt(document.getElementById('voiceId').value) || 0;
 
-    // Extract the right section
-    var textToRead = lastScript;
-    if (section !== 'full') {
-      var key = section.toUpperCase();
-      var match = lastScript.match(new RegExp('\\[' + key + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
-      textToRead = match ? match[1].trim() : lastScript;
-    } else {
-      var parts = [];
-      ['HOOK','BODY','CTA'].forEach(function(k) {
-        var m = lastScript.match(new RegExp('\\[' + k + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
-        if (m) parts.push(m[1].trim());
-      });
-      if (parts.length) textToRead = parts.join(' ');
-    }
+    // Extract the right section using getScriptSection (already fixed)
+    var textToRead = getScriptSection(section);
+    if (!textToRead) textToRead = lastScript.replace(/\[HOOK\]|\[BODY\]|\[CTA\]|\[CAPTION\]|\[HASHTAGS\]/gi, '').trim();
 
     // Clean text — remove bracket tags
     textToRead = textToRead.replace(/\[\w+\]/g, '').replace(/\s+/g, ' ').trim();
@@ -1293,17 +1282,22 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
   function getScriptSection(section) {
     if (!lastScript) return '';
+    // Strip [TAG] labels and return clean text if no tags found
+    var clean = lastScript.replace(/\[HOOK\]|\[BODY\]|\[CTA\]|\[CAPTION\]|\[HASHTAGS\]/gi, '').trim();
     if (section === 'full') {
+      // Try to extract Hook + Body + CTA sections
       var parts = [];
       ['HOOK','BODY','CTA'].forEach(function(k) {
-        var m = lastScript.match(new RegExp('\[' + k + '\]([\s\S]*?)(?=\[|$)', 'i'));
+        var rx = new RegExp('\\[' + k + '\\]([\\s\\S]*?)(?=\\[|$)', 'i');
+        var m = lastScript.match(rx);
         if (m) parts.push(m[1].trim());
       });
-      return parts.join(' ') || lastScript;
+      return parts.length ? parts.join(' ') : clean;
     }
     var key = section.toUpperCase();
-    var match = lastScript.match(new RegExp('\[' + key + '\]([\s\S]*?)(?=\[|$)', 'i'));
-    return match ? match[1].trim() : lastScript;
+    var rx = new RegExp('\\[' + key + '\\]([\\s\\S]*?)(?=\\[|$)', 'i');
+    var match = lastScript.match(rx);
+    return match ? match[1].trim() : clean;
   }
 
   function chunkText(text, wordsPerChunk) {
