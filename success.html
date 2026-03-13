@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to LeadAI — Payment Successful</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #04090F; --accent: #00E5A0; --text: #F0EEE8;
+      --muted: rgba(240,238,232,0.5); --surface: #0C1520;
+      --border: rgba(255,255,255,0.08);
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 3rem 2.5rem; max-width: 480px; width: 100%; text-align: center; }
+    .icon { font-size: 3.5rem; margin-bottom: 1.5rem; animation: pop 0.5s ease both; }
+    @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    h1 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; }
+    h1 span { color: var(--accent); }
+    p { color: var(--muted); line-height: 1.7; margin-bottom: 2rem; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--accent); color: #04090F; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 1rem; padding: 0.9rem 2rem; border-radius: 10px; text-decoration: none; }
+    .plan-badge { display: inline-block; background: rgba(0,229,160,0.12); border: 0.5px solid rgba(0,229,160,0.3); color: var(--accent); font-size: 0.8rem; font-weight: 500; padding: 0.35rem 1rem; border-radius: 100px; margin-bottom: 1.5rem; text-transform: capitalize; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🎉</div>
+  <div class="plan-badge" id="planBadge">Pro Plan</div>
+  <h1>Welcome to <span>LeadAI</span></h1>
+  <p>Your payment was successful. You now have full access to generate unlimited lead videos. Let's create your first one.</p>
+  <a href="script-generator.html" class="btn">✦ Start Generating Videos</a>
+</div>
+<script>
+  // Store paid status so usage limit is bypassed
+  var params = new URLSearchParams(window.location.search);
+  var plan = params.get('plan') || 'pro';
+  localStorage.setItem('leadai_paid', 'true');
+  localStorage.setItem('leadai_plan', plan);
+  localStorage.setItem('leadai_paid_at', Date.now().toString());
+  document.getElementById('planBadge').textContent = plan.charAt(0).toUpperCase() + plan.slice(1) + ' Plan — Active';
+</script>
+</body>
+</html>

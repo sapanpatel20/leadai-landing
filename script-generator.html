@@ -712,6 +712,37 @@
     }
     .btn-use-script:hover { background: rgba(0,229,160,0.18); }
 
+
+    /* ── Paywall Modal ── */
+    .paywall-overlay {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(4,9,15,0.88); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .paywall-overlay.visible { display: flex; }
+    .paywall-modal {
+      background: #0C1520; border: 0.5px solid rgba(0,229,160,0.25);
+      border-radius: 20px; padding: 2.5rem 2rem; max-width: 420px;
+      width: 100%; text-align: center; animation: slideUp 0.3s ease both;
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .paywall-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .paywall-title { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+    .paywall-title span { color: var(--accent); }
+    .paywall-sub { color: var(--muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.75rem; }
+    .paywall-limit { display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(255,180,0,0.08); border: 0.5px solid rgba(255,180,0,0.25); border-radius: 8px; padding: 0.65rem 1rem; font-size: 0.85rem; color: #FFB400; margin-bottom: 1.75rem; }
+    .paywall-plans { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .paywall-plan { border: 0.5px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: border-color 0.2s, background 0.2s; text-decoration: none; color: var(--text); }
+    .paywall-plan:hover { border-color: rgba(0,229,160,0.4); background: rgba(0,229,160,0.04); }
+    .paywall-plan.featured-plan { border-color: rgba(0,229,160,0.35); background: rgba(0,229,160,0.06); }
+    .paywall-plan-name { font-weight: 600; font-size: 0.95rem; }
+    .paywall-plan-price { font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+    .paywall-plan-badge { font-size: 0.65rem; background: rgba(0,229,160,0.15); color: var(--accent); padding: 0.15rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; }
+    .paywall-dismiss { font-size: 0.8rem; color: var(--muted); cursor: pointer; text-decoration: underline; }
+    .usage-counter { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--muted); margin-top: 0.75rem; justify-content: center; }
+    .usage-pip { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+    .usage-pip.used { background: var(--accent); }
+
   </style>
 </head>
 <body>
@@ -725,6 +756,7 @@
 
   <h1 class="page-title">AI <span>Video</span> Generator</h1>
   <p class="page-sub">Enter your topic → AI writes the script, records the voice, and builds your video.</p>
+  <div class="usage-counter" id="usageCounter"></div>
 
   <!-- Input Card -->
   <div class="card">
@@ -1019,11 +1051,106 @@ Book a free consultation at leadai.guru"
   </div>
 
 
+
+  <!-- Paywall Modal -->
+  <div class="paywall-overlay" id="paywallOverlay">
+    <div class="paywall-modal">
+      <div class="paywall-icon">🚀</div>
+      <div class="paywall-title">You've used your <span>3 free</span> videos</div>
+      <div class="paywall-sub">Upgrade to keep generating unlimited lead videos. No contracts, cancel anytime.</div>
+      <div class="paywall-limit">⚡ Free plan: 3 videos · Paid plan: Unlimited</div>
+      <div class="paywall-plans">
+        <a href="pricing.html#checkout-starter" class="paywall-plan" onclick="startCheckout('starter',false,event)">
+          <div><div class="paywall-plan-name">Starter</div><div style="font-size:0.75rem;color:var(--muted);">10 videos/mo · 1 platform</div></div>
+          <div class="paywall-plan-price">$19/mo</div>
+        </a>
+        <a href="pricing.html#checkout-pro" class="paywall-plan featured-plan" onclick="startCheckout('pro',false,event)">
+          <div><div class="paywall-plan-name">Pro <span class="paywall-plan-badge">Most popular</span></div><div style="font-size:0.75rem;color:var(--muted);">50 videos/mo · All platforms</div></div>
+          <div class="paywall-plan-price">$49/mo</div>
+        </a>
+        <a href="pricing.html#checkout-agency" class="paywall-plan" onclick="startCheckout('agency',false,event)">
+          <div><div class="paywall-plan-name">Agency</div><div style="font-size:0.75rem;color:var(--muted);">Unlimited · 10 client accounts</div></div>
+          <div class="paywall-plan-price">$99/mo</div>
+        </a>
+      </div>
+      <div class="paywall-dismiss" onclick="dismissPaywall()">I'll upgrade later →</div>
+    </div>
+  </div>
+
   </div>
 
 </div>
 
 <script>
+
+  // ── Usage limit (3 free videos) ──
+  var FREE_LIMIT = 3;
+
+  function getUsage() {
+    var paid = localStorage.getItem('leadai_paid') === 'true';
+    var count = parseInt(localStorage.getItem('leadai_video_count') || '0');
+    return { paid: paid, count: count };
+  }
+
+  function incrementUsage() {
+    var u = getUsage();
+    if (!u.paid) {
+      var next = u.count + 1;
+      localStorage.setItem('leadai_video_count', next.toString());
+      updateUsageUI(next);
+      if (next >= FREE_LIMIT) {
+        setTimeout(function() { showPaywall(); }, 1500);
+      }
+    }
+  }
+
+  function checkUsageBeforeGenerate() {
+    var u = getUsage();
+    if (u.paid) return true; // paid — always allow
+    if (u.count >= FREE_LIMIT) {
+      showPaywall();
+      return false;
+    }
+    return true;
+  }
+
+  function showPaywall() {
+    document.getElementById('paywallOverlay').classList.add('visible');
+  }
+
+  function dismissPaywall() {
+    document.getElementById('paywallOverlay').classList.remove('visible');
+  }
+
+  function updateUsageUI(count) {
+    var counter = document.getElementById('usageCounter');
+    if (!counter) return;
+    var u = getUsage();
+    if (u.paid) { counter.style.display = 'none'; return; }
+    var remaining = Math.max(0, FREE_LIMIT - count);
+    var pips = '';
+    for (var i = 0; i < FREE_LIMIT; i++) {
+      pips += '<div class="usage-pip' + (i < count ? ' used' : '') + '"></div>';
+    }
+    counter.innerHTML = pips + '<span>' + remaining + ' free video' + (remaining !== 1 ? 's' : '') + ' remaining</span>';
+  }
+
+  async function startCheckout(plan, annual, e) {
+    if (e) e.preventDefault();
+    try {
+      var res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: plan, annual: annual || false })
+      });
+      var data = await res.json();
+      if (data.url) { window.location.href = data.url; }
+      else { window.location.href = 'pricing.html'; }
+    } catch(err) {
+      window.location.href = 'pricing.html';
+    }
+  }
+
   let lastScript = '';
 
   async function generateScript() {
@@ -1152,6 +1279,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     statsRow.style.display = 'grid';
     statsRow.style.animation = 'fadeUp 0.4s ease both';
 
+    incrementUsage();
     document.getElementById('voiceCard').classList.add('visible');
     // Auto-fill image search from topic
     var topicEl = document.getElementById('topic');
@@ -1802,6 +1930,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }
   setTimeout(loadVoices, 200);
+  updateUsageUI(getUsage().count);
 
   // ── Search history for image search ──
   function updateSearchHistory() {

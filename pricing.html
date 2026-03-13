@@ -550,7 +550,7 @@
         <div class="feature-item"><div class="feature-check">✓</div> 1 platform (Instagram or TikTok)</div>
         <div class="feature-item"><div class="feature-check">✓</div> Email support</div>
       </div>
-      <a href="#waitlist" class="plan-btn outline">Join waitlist</a>
+      <button class="plan-btn outline" onclick="startCheckout('starter')">Get Started →</button>
     </div>
 
     <!-- Pro (featured) -->
@@ -576,7 +576,7 @@
         <div class="feature-item"><div class="feature-check">✓</div> Priority support</div>
         <div class="feature-item"><div class="feature-check">✓</div> Analytics dashboard</div>
       </div>
-      <a href="#waitlist" class="plan-btn primary">Join waitlist</a>
+      <button class="plan-btn primary" onclick="startCheckout('pro')">Start Free Trial →</button>
     </div>
 
     <!-- Agency -->
@@ -601,7 +601,7 @@
         <div class="feature-item"><div class="feature-check">✓</div> 1-on-1 onboarding call</div>
         <div class="feature-item"><div class="feature-check">✓</div> Custom integrations</div>
       </div>
-      <a href="#waitlist" class="plan-btn outline">Join waitlist</a>
+      <button class="plan-btn outline" onclick="startCheckout('starter')">Get Started →</button>
     </div>
 
   </div>
@@ -843,6 +843,34 @@
     document.querySelectorAll('.faq-item').forEach(function(i) { i.classList.remove('open'); });
     if (!isOpen) item.classList.add('open');
   }
+
+  async function startCheckout(plan) {
+    var annual = document.getElementById('billingToggle') && document.getElementById('billingToggle').checked;
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Loading...';
+    try {
+      var res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: plan, annual: annual })
+      });
+      var data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        // Stripe not set up yet — send to waitlist section
+        document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
+        btn.disabled = false;
+        btn.textContent = plan === 'pro' ? 'Start Free Trial →' : plan === 'starter' ? 'Get Started →' : 'Contact Sales →';
+      }
+    } catch(err) {
+      document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
+      btn.disabled = false;
+      btn.textContent = plan === 'pro' ? 'Start Free Trial →' : plan === 'starter' ? 'Get Started →' : 'Contact Sales →';
+    }
+  }
+
 </script>
 </body>
 </html>
