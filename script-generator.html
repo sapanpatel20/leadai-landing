@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadAI — Script Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #04090F;
+      --surface: #0C1520;
+      --surface2: #111D2B;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.16);
+      --accent: #00E5A0;
+      --accent-dim: rgba(0,229,160,0.1);
+      --accent-glow: rgba(0,229,160,0.2);
+      --text: #F0EEE8;
+      --muted: rgba(240,238,232,0.45);
+      --muted2: rgba(240,238,232,0.25);
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --red: rgba(255,80,80,0.9);
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Glow bg */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(0,229,160,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 2.5rem;
+      border-bottom: 0.5px solid var(--border);
+      background: rgba(4,9,15,0.85);
+      backdrop-filter: blur(20px);
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .logo span { color: var(--accent); }
+
+    .nav-badge {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 0.5px solid rgba(0,229,160,0.25);
+      padding: 0.25rem 0.75rem;
+      border-radius: 100px;
+    }
+
+    /* ── Layout ── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3.5rem 2rem 6rem;
+    }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 0.6rem;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .page-title span { color: var(--accent); }
+
+    .page-sub {
+      color: var(--muted);
+      font-weight: 300;
+      font-size: 1rem;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.5s 0.08s ease both;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.5s 0.15s ease both;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-title-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    input, select, textarea {
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      transition: border-color 0.2s, background 0.2s;
+      outline: none;
+      width: 100%;
+    }
+
+    input::placeholder, textarea::placeholder { color: var(--muted2); }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(0,229,160,0.5);
+      background: rgba(0,229,160,0.04);
+    }
+
+    select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(240,238,232,0.4)' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
+
+    select option { background: #0C1520; }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Generate Button ── */
+    .btn-generate {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      background: var(--accent);
+      color: #04090F;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 1rem;
+      padding: 0.95rem 2rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 0 28px var(--accent-glow);
+      margin-top: 1.25rem;
+    }
+
+    .btn-generate:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-generate:active:not(:disabled) { transform: scale(0.99); }
+    .btn-generate:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Output area ── */
+    .output-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .output-card.visible { display: block; }
+
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 0.5px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .output-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .status-dot.loading {
+      animation: blink 1s ease infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: transparent;
+      border: 0.5px solid var(--border);
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover { color: var(--text); border-color: var(--border-hover); }
+    .copy-btn.copied { color: var(--accent); border-color: rgba(0,229,160,0.3); }
+
+    .output-body { padding: 1.75rem; }
+
+    /* Script sections */
+    .script-section {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .script-section:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .section-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 0.5px solid rgba(0,229,160,0.25);
+      padding: 0.2rem 0.65rem;
+      border-radius: 4px;
+      margin-bottom: 0.65rem;
+    }
+
+    .section-tag.hook { background: rgba(255,180,0,0.1); color: #FFB400; border-color: rgba(255,180,0,0.25); }
+    .section-tag.body { background: rgba(100,160,255,0.1); color: #64A0FF; border-color: rgba(100,160,255,0.25); }
+    .section-tag.cta  { background: var(--accent-dim); color: var(--accent); border-color: rgba(0,229,160,0.25); }
+    .section-tag.caption { background: rgba(200,100,255,0.1); color: #C864FF; border-color: rgba(200,100,255,0.25); }
+    .section-tag.hashtags { background: rgba(255,100,150,0.1); color: #FF6496; border-color: rgba(255,100,150,0.25); }
+
+    .section-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .section-text em {
+      font-style: italic;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1.75rem;
+    }
+
+    .skel-line {
+      height: 14px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+      background-size: 200% 100%;
+      border-radius: 4px;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .stat-mini {
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      text-align: center;
+    }
+
+    .stat-mini-num {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-mini-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Error ── */
+    .error-box {
+      background: rgba(255,80,80,0.07);
+      border: 0.5px solid rgba(255,80,80,0.25);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      color: var(--red);
+      font-size: 0.88rem;
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .error-box.visible { display: block; }
+
+    /* ── Next steps banner ── */
+    .next-steps {
+      margin-top: 1.5rem;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      display: none;
+    }
+
+    .next-steps.visible { display: block; animation: fadeUp 0.4s 0.2s ease both; }
+
+    .next-steps-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .next-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .next-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .next-item .week-badge {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .week-badge.done { background: var(--accent-dim); color: var(--accent); border: 0.5px solid rgba(0,229,160,0.25); }
+    .week-badge.w2 { background: rgba(100,160,255,0.1); color: #64A0FF; border: 0.5px solid rgba(100,160,255,0.2); }
+    .week-badge.w3 { background: rgba(255,180,0,0.1); color: #FFB400; border: 0.5px solid rgba(255,180,0,0.2); }
+    .week-badge.w4 { background: rgba(200,100,255,0.1); color: #C864FF; border: 0.5px solid rgba(200,100,255,0.2); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 580px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: 1fr; }
+      nav { padding: 1rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">Lead<span>AI</span></a>
+  <span class="nav-badge">Week 1 — Script Generator</span>
+</nav>
+
+<div class="container">
+
+  <h1 class="page-title">AI <span>Script</span> Generator</h1>
+  <p class="page-sub">Enter your topic → get a ready-to-record video script in seconds.</p>
+
+  <!-- Input Card -->
+  <div class="card">
+    <div class="card-title"><div class="card-title-dot"></div> Video Details</div>
+
+    <div class="form-grid">
+      <div class="form-group full">
+        <label for="topic">Topic / Product</label>
+        <input type="text" id="topic" placeholder="e.g. Dubai property investment under $500K" />
+      </div>
+
+      <div class="form-group">
+        <label for="platform">Platform</label>
+        <select id="platform">
+          <option value="Instagram Reels">Instagram Reels</option>
+          <option value="TikTok">TikTok</option>
+          <option value="YouTube Shorts">YouTube Shorts</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="duration">Duration</label>
+        <select id="duration">
+          <option value="30 seconds">30 seconds</option>
+          <option value="60 seconds">60 seconds</option>
+          <option value="90 seconds">90 seconds</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="tone">Tone</label>
+        <select id="tone">
+          <option value="Educational">Educational</option>
+          <option value="Exciting &amp; Hype">Exciting &amp; Hype</option>
+          <option value="Professional">Professional</option>
+          <option value="Conversational">Conversational</option>
+          <option value="Urgent">Urgent</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="cta">Call to Action</label>
+        <input type="text" id="cta" placeholder="e.g. Book a free consultation" />
+      </div>
+
+      <div class="form-group full">
+        <label for="audience">Target Audience <span style="opacity:0.4; font-size:0.7rem;">(optional)</span></label>
+        <input type="text" id="audience" placeholder="e.g. First-time investors in their 30s" />
+      </div>
+    </div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generateScript()">
+      ✦ Generate Script
+    </button>
+
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- Output Card -->
+  <div class="output-card" id="outputCard">
+    <div class="output-header">
+      <div class="output-header-left">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusLabel">Ready</span>
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyScript()">⎘ Copy script</button>
+    </div>
+
+    <!-- Skeleton loader -->
+    <div class="skeleton" id="skeleton">
+      <div class="skel-line" style="width:30%"></div>
+      <div class="skel-line" style="width:90%"></div>
+      <div class="skel-line" style="width:85%"></div>
+      <div class="skel-line" style="width:40%"></div>
+      <div class="skel-line" style="width:95%"></div>
+      <div class="skel-line" style="width:80%"></div>
+      <div class="skel-line" style="width:35%"></div>
+      <div class="skel-line" style="width:88%"></div>
+    </div>
+
+    <!-- Actual output -->
+    <div class="output-body" id="outputBody" style="display:none;"></div>
+  </div>
+
+  <!-- Stats row (shown after generation) -->
+  <div class="stats-row" id="statsRow" style="display:none;">
+    <div class="stat-mini">
+      <div class="stat-mini-num" id="statWords">—</div>
+      <div class="stat-mini-label">Words</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-num" id="statTime">—</div>
+      <div class="stat-mini-label">Est. duration</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-num" id="statSections">—</div>
+      <div class="stat-mini-label">Sections</div>
+    </div>
+  </div>
+
+  <!-- Next steps -->
+  <div class="next-steps" id="nextSteps">
+    <div class="next-steps-title">Your build roadmap</div>
+    <div class="next-list">
+      <div class="next-item">
+        <span class="week-badge done">Week 1 ✓</span>
+        AI writes your script — done!
+      </div>
+      <div class="next-item">
+        <span class="week-badge w2">Week 2</span>
+        Add ElevenLabs voice — script becomes audio
+      </div>
+      <div class="next-item">
+        <span class="week-badge w3">Week 3</span>
+        Add video generation — audio becomes video
+      </div>
+      <div class="next-item">
+        <span class="week-badge w4">Week 4</span>
+        Launch LeadAI beta to real users
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let lastScript = '';
+
+  async function generateScript() {
+    const topic = document.getElementById('topic').value.trim();
+    if (!topic) {
+      showError('Please enter a topic first.');
+      return;
+    }
+
+    const platform = document.getElementById('platform').value;
+    const duration = document.getElementById('duration').value;
+    const tone     = document.getElementById('tone').value;
+    const cta      = document.getElementById('cta').value.trim() || 'Visit our website to learn more';
+    const audience = document.getElementById('audience').value.trim();
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating…';
+
+    hideError();
+    showOutputCard(true);
+
+    const prompt = `You are an expert video scriptwriter for social media marketing. Write a ${duration} ${tone.toLowerCase()} video script for ${platform} about: "${topic}".
+${audience ? `Target audience: ${audience}.` : ''}
+Call to action: ${cta}
+
+Format your response EXACTLY like this (use these exact section headers):
+
+[HOOK]
+Write an attention-grabbing opening line that stops the scroll. 1-2 sentences max.
+
+[BODY]
+Write the main content. For ${duration}, aim for ${duration === '30 seconds' ? '3-4' : duration === '60 seconds' ? '5-7' : '8-10'} punchy points. Use short sentences. Each point on a new line.
+
+[CTA]
+End with a strong, specific call to action: ${cta}
+
+[CAPTION]
+Write a compelling social media caption for this video (2-3 sentences).
+
+[HASHTAGS]
+List 8-10 relevant hashtags as a single line.
+
+Keep it energetic, specific, and optimized for ${platform} viewers. Do not add any other sections or commentary.`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'API error');
+      }
+
+      const text = data.content?.[0]?.text || '';
+      lastScript = text;
+      renderScript(text);
+
+    } catch (err) {
+      showOutputCard(false);
+      showError('Could not generate script: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✦ Generate Script';
+    }
+  }
+
+  function renderScript(text) {
+    const sections = [
+      { key: 'HOOK',     label: 'Hook',     tagClass: 'hook' },
+      { key: 'BODY',     label: 'Body',     tagClass: 'body' },
+      { key: 'CTA',      label: 'Call to Action', tagClass: 'cta' },
+      { key: 'CAPTION',  label: 'Caption',  tagClass: 'caption' },
+      { key: 'HASHTAGS', label: 'Hashtags', tagClass: 'hashtags' },
+    ];
+
+    let html = '';
+    let wordCount = 0;
+
+    sections.forEach(({ key, label, tagClass }) => {
+      const regex = new RegExp(`\\[${key}\\]([\\s\\S]*?)(?=\\[|$)`, 'i');
+      const match = text.match(regex);
+      if (match) {
+        const content = match[1].trim();
+        wordCount += content.split(/\s+/).length;
+        html += `
+          <div class="script-section">
+            <div class="section-tag ${tagClass}">${label}</div>
+            <div class="section-text">${escapeHtml(content)}</div>
+          </div>`;
+      }
+    });
+
+    if (!html) {
+      html = `<div class="section-text">${escapeHtml(text)}</div>`;
+      wordCount = text.split(/\s+/).length;
+    }
+
+    document.getElementById('skeleton').style.display = 'none';
+    const body = document.getElementById('outputBody');
+    body.innerHTML = html;
+    body.style.display = 'block';
+
+    document.getElementById('statusDot').classList.remove('loading');
+    document.getElementById('statusLabel').textContent = 'Script ready';
+
+    const wpm = 140;
+    const estSeconds = Math.round((wordCount / wpm) * 60);
+    const estMin = Math.floor(estSeconds / 60);
+    const estSec = estSeconds % 60;
+    const estLabel = estMin > 0 ? `${estMin}m ${estSec}s` : `${estSec}s`;
+
+    document.getElementById('statWords').textContent = wordCount;
+    document.getElementById('statTime').textContent = estLabel;
+    document.getElementById('statSections').textContent = (text.match(/\[/g) || []).length;
+
+    const statsRow = document.getElementById('statsRow');
+    statsRow.style.display = 'grid';
+    statsRow.style.animation = 'fadeUp 0.4s ease both';
+
+    document.getElementById('nextSteps').classList.add('visible');
+  }
+
+  function showOutputCard(loading) {
+    const card = document.getElementById('outputCard');
+    card.classList.add('visible');
+    document.getElementById('skeleton').style.display = loading ? 'flex' : 'none';
+    document.getElementById('outputBody').style.display = 'none';
+
+    const dot = document.getElementById('statusDot');
+    dot.classList.toggle('loading', loading);
+    document.getElementById('statusLabel').textContent = loading ? 'Generating…' : 'Ready';
+  }
+
+  function copyScript() {
+    if (!lastScript) return;
+    navigator.clipboard.writeText(lastScript).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '⎘ Copy script';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('visible');
+  }
+
+  function hideError() {
+    document.getElementById('errorBox').classList.remove('visible');
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('topic').addEventListener('keydown', e => {
+    if (e.key === 'Enter') generateScript();
+  });
+</script>
+</body>
+</html>
