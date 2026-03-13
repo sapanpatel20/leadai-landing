@@ -441,6 +441,132 @@
     .week-badge.w3 { background: rgba(255,180,0,0.1); color: #FFB400; border: 0.5px solid rgba(255,180,0,0.2); }
     .week-badge.w4 { background: rgba(200,100,255,0.1); color: #C864FF; border: 0.5px solid rgba(200,100,255,0.2); }
 
+    /* ── Voice card ── */
+    .voice-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 1.5rem;
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .voice-card.visible { display: block; }
+
+    .voice-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 0.5px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .voice-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+    .api-key-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .api-key-row .form-group { flex: 1; }
+
+    .voice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .btn-voice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: rgba(100,160,255,0.12);
+      border: 0.5px solid rgba(100,160,255,0.3);
+      color: #64A0FF;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.95rem;
+      padding: 0.85rem 1.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .btn-voice:hover:not(:disabled) { background: rgba(100,160,255,0.2); transform: translateY(-1px); }
+    .btn-voice:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Audio player */
+    .audio-wrap {
+      background: rgba(255,255,255,0.03);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .audio-wrap.visible { display: flex; animation: fadeUp 0.3s ease both; }
+
+    .audio-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    audio {
+      width: 100%;
+      height: 36px;
+      border-radius: 8px;
+      accent-color: var(--accent);
+    }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--accent-dim);
+      border: 0.5px solid rgba(0,229,160,0.3);
+      color: var(--accent);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.85rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-download:hover { background: rgba(0,229,160,0.18); }
+
+    .voice-error {
+      background: rgba(255,80,80,0.07);
+      border: 0.5px solid rgba(255,80,80,0.25);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--red);
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .voice-error.visible { display: block; }
+
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -564,6 +690,54 @@
     </div>
   </div>
 
+  <!-- Voice Generation Card (Week 2) -->
+  <div class="voice-card" id="voiceCard">
+    <div class="voice-header">
+      🎙 Step 2 — Generate AI Voiceover
+    </div>
+    <div class="voice-body">
+      <div class="form-group">
+        <label for="elevenKey">ElevenLabs API Key</label>
+        <input type="password" id="elevenKey" placeholder="Paste your new ElevenLabs API key here" />
+      </div>
+      <div class="voice-grid">
+        <div class="form-group">
+          <label for="voiceId">Voice</label>
+          <select id="voiceId">
+            <option value="21m00Tcm4TlvDq8ikWAM">Rachel — calm, professional</option>
+            <option value="AZnzlk1XvdvUeBnXmlld">Domi — strong, confident</option>
+            <option value="EXAVITQu4vr4xnSDxMaL">Bella — warm, friendly</option>
+            <option value="ErXwobaYiN019PkySvjV">Antoni — deep, authoritative</option>
+            <option value="MF3mGyEYCl7XYWbV9V6O">Elli — energetic, youthful</option>
+            <option value="TxGEqnHWrfWFTfGW9XjX">Josh — natural, engaging</option>
+            <option value="VR6AewLTigWG4xSOukaG">Arnold — powerful, bold</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="voiceSection">Read which section?</label>
+          <select id="voiceSection">
+            <option value="full">Full script (Hook + Body + CTA)</option>
+            <option value="hook">Hook only</option>
+            <option value="body">Body only</option>
+            <option value="cta">CTA only</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-voice" id="voiceBtn" onclick="generateVoice()">
+        🎙 Generate Voiceover
+      </button>
+      <div class="voice-error" id="voiceError"></div>
+      <div class="audio-wrap" id="audioWrap">
+        <div class="audio-label">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+          Voiceover ready — play or download
+        </div>
+        <audio id="audioPlayer" controls></audio>
+        <a class="btn-download" id="downloadBtn" download="leadai-voiceover.mp3">⬇ Download MP3</a>
+      </div>
+    </div>
+  </div>
+
   <!-- Next steps -->
   <div class="next-steps" id="nextSteps">
     <div class="next-steps-title">Your build roadmap</div>
@@ -573,8 +747,8 @@
         AI writes your script — done!
       </div>
       <div class="next-item">
-        <span class="week-badge w2">Week 2</span>
-        Add ElevenLabs voice — script becomes audio
+        <span class="week-badge done">Week 2 ✓</span>
+        ElevenLabs voiceover — done!
       </div>
       <div class="next-item">
         <span class="week-badge w3">Week 3</span>
@@ -719,6 +893,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     statsRow.style.animation = 'fadeUp 0.4s ease both';
 
     document.getElementById('nextSteps').classList.add('visible');
+    document.getElementById('voiceCard').classList.add('visible');
   }
 
   function showOutputCard(loading) {
@@ -762,6 +937,64 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   document.getElementById('topic').addEventListener('keydown', e => {
     if (e.key === 'Enter') generateScript();
   });
+
+  async function generateVoice() {
+    const apiKey = document.getElementById('elevenKey').value.trim();
+    if (!apiKey) { showVoiceError('Please paste your ElevenLabs API key above.'); return; }
+    if (!lastScript) { showVoiceError('Generate a script first.'); return; }
+    const section = document.getElementById('voiceSection').value;
+    const voiceId = document.getElementById('voiceId').value;
+    let textToRead = lastScript;
+    if (section !== 'full') {
+      const key = section.toUpperCase();
+      const match = lastScript.match(new RegExp('\\[' + key + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
+      textToRead = match ? match[1].trim() : lastScript;
+    } else {
+      let parts = [];
+      ['HOOK','BODY','CTA'].forEach(function(k) {
+        var m = lastScript.match(new RegExp('\\[' + k + '\\]([\\s\\S]*?)(?=\\[|$)', 'i'));
+        if (m) parts.push(m[1].trim());
+      });
+      if (parts.length) textToRead = parts.join('\n\n');
+    }
+    const btn = document.getElementById('voiceBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating voice…';
+    hideVoiceError();
+    document.getElementById('audioWrap').classList.remove('visible');
+    try {
+      const res = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId, {
+        method: 'POST',
+        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+        body: JSON.stringify({ text: textToRead, model_id: 'eleven_monolingual_v1', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
+      });
+      if (!res.ok) { const e = await res.json().catch(function(){return {};}); throw new Error((e.detail && e.detail.message) || 'ElevenLabs error ' + res.status); }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const player = document.getElementById('audioPlayer');
+      player.src = url;
+      const dl = document.getElementById('downloadBtn');
+      dl.href = url;
+      document.getElementById('audioWrap').classList.add('visible');
+      player.play();
+    } catch(err) {
+      showVoiceError('Could not generate voice: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🎙 Generate Voiceover';
+    }
+  }
+
+  function showVoiceError(msg) {
+    var box = document.getElementById('voiceError');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('visible');
+  }
+
+  function hideVoiceError() {
+    document.getElementById('voiceError').classList.remove('visible');
+  }
+
 </script>
 </body>
 </html>
