@@ -980,14 +980,14 @@ Book a free consultation at leadai.guru"
       <div style="margin-bottom:1rem;">
         <label style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.5rem;">Voice Engine</label>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;" id="providerChips">
-          <button class="provider-chip selected" data-provider="openai" onclick="selectProvider(this)">
+          <button class="provider-chip" data-provider="openai" onclick="selectProvider(this)">
             OpenAI TTS <span style="opacity:0.55;font-size:0.68rem;">~$0.001/video · great quality</span>
           </button>
           <button class="provider-chip" data-provider="elevenlabs" onclick="selectProvider(this)">
             ElevenLabs <span style="opacity:0.55;font-size:0.68rem;">premium · most natural</span>
           </button>
-          <button class="provider-chip" data-provider="browser" onclick="selectProvider(this)">
-            Browser (free) <span style="opacity:0.55;font-size:0.68rem;">no cost · basic quality</span>
+          <button class="provider-chip selected" data-provider="browser" onclick="selectProvider(this)">
+            Browser (free) <span style="opacity:0.55;font-size:0.68rem;">no cost · works instantly</span>
           </button>
         </div>
       </div>
@@ -1456,7 +1456,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   // ══════════════════════════════════════════════════
   // VOICE PROVIDER STATE
   // ══════════════════════════════════════════════════
-  var currentProvider = 'openai';
+  var currentProvider = 'browser';
   var elAudioBlob = null;
 
   function selectProvider(el) {
