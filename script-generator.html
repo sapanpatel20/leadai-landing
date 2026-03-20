@@ -983,6 +983,9 @@ Book a free consultation at leadai.guru"
           <button class="provider-chip" data-provider="openai" onclick="selectProvider(this)">
             OpenAI TTS <span style="opacity:0.55;font-size:0.68rem;">~$0.001/video · great quality</span>
           </button>
+          <button class="provider-chip" data-provider="fish" onclick="selectProvider(this)">
+            Fish Audio <span style="opacity:0.55;font-size:0.68rem;">#1 TTS quality · voice clone</span>
+          </button>
           <button class="provider-chip" data-provider="elevenlabs" onclick="selectProvider(this)">
             ElevenLabs <span style="opacity:0.55;font-size:0.68rem;">premium · most natural</span>
           </button>
@@ -1125,11 +1128,11 @@ Book a free consultation at leadai.guru"
           </select>
         </div>
         <div class="form-group">
-          <label for="overlayOpacity">Image darkness</label>
+          <label for="overlayOpacity">Image brightness</label>
           <select id="overlayOpacity">
-            <option value="0.3">Light overlay</option>
-            <option value="0.5" selected>Medium overlay</option>
-            <option value="0.7">Dark overlay</option>
+            <option value="0.15">Bright — image shows clearly</option>
+            <option value="0.3" selected>Balanced — like TikTok</option>
+            <option value="0.5">Dark — text pops more</option>
           </select>
         </div>
       </div>
@@ -1151,7 +1154,7 @@ Book a free consultation at leadai.guru"
           <canvas id="captionCanvas" width="1080" height="1920" style="width:270px;height:480px;"></canvas>
         </div>
         <div class="video-controls">
-          <button class="btn-play-preview" onclick="previewAnimation()">▶ Preview Animation</button>
+          <button class="btn-play-preview" id="previewBtn" onclick="previewAnimation()">▶ Play with Voice</button>
           <button class="btn-dl-video" onclick="downloadVideo()" id="dlVideoBtn">⬇ Download MP4</button>
           <button class="btn-dl-video" onclick="downloadVideoWithAudio()" id="dlVideoAudioBtn"
             style="display:none;background:rgba(0,229,160,0.08);border-color:rgba(0,229,160,0.3);color:var(--accent);">
@@ -1166,7 +1169,7 @@ Book a free consultation at leadai.guru"
           <div id="ffmpegStatus" style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Encoding...</div>
         </div>
         <div class="video-note" id="videoNote">
-          💡 Generate a voiceover above first, then use "Download MP4 + Voice" to merge them into one file.
+          💡 Generate a voiceover first, then click <strong>▶ Play with Voice</strong> to preview them together. Use <strong>🎬 Download MP4 + Voice</strong> to get a single merged file.
         </div>
       </div>
     </div>
@@ -1517,6 +1520,34 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       return;
     }
 
+    if (currentProvider === 'fish') {
+      // Fish Audio — top preset voices from fish.audio
+      // Users can add their own cloned voice IDs here too
+      var fishVoices = [
+        { id:'default',                            name:'Fish Default — natural, balanced' },
+        { id:'54a5170264694bfc8e9ad98df7bd89c3',   name:'Anna — female, warm English' },
+        { id:'0eb6c58816b44d16ab8040a73bfde2f2',   name:'John — male, professional' },
+        { id:'7f92f8efb8ec43bf81429cc1c9199cb1',   name:'Emily — female, energetic' },
+        { id:'ad8bfee14f5a4fe0a22bf85df9f5e96d',   name:'David — male, deep, authoritative' },
+        { id:'custom',                             name:'My Cloned Voice (paste ID below)' },
+      ];
+      select.innerHTML = '';
+      fishVoices.forEach(function(v){
+        var o = document.createElement('option');
+        o.value = v.id;
+        o.textContent = v.name;
+        select.appendChild(o);
+      });
+      // Show a helper for custom voice ID
+      var helper = document.createElement('div');
+      helper.id = 'fishVoiceHelper';
+      helper.style.cssText = 'font-size:0.72rem;color:var(--muted);margin-top:0.4rem;';
+      helper.innerHTML = '💡 Find more voices at <a href="https://fish.audio" target="_blank" style="color:var(--accent)">fish.audio</a> — copy the voice ID and paste it as the option value.';
+      var existing = document.getElementById('fishVoiceHelper');
+      if (!existing) { select.parentNode.appendChild(helper); }
+      return;
+    }
+
     if (currentProvider === 'elevenlabs') {
       try {
         var res = await fetch('/api/voices');
@@ -1587,9 +1618,13 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     // ── API-based providers (OpenAI or ElevenLabs) ──
     try {
       var voiceId = document.getElementById('voiceId').value;
-      document.getElementById('voiceStatusText').textContent = 'Sending to ' + (currentProvider === 'openai' ? 'OpenAI TTS' : 'ElevenLabs') + '...';
+      document.getElementById('voiceStatusText').textContent = 'Sending to ' +
+        (currentProvider === 'openai' ? 'OpenAI TTS' :
+         currentProvider === 'fish'   ? 'Fish Audio' : 'ElevenLabs') + '...';
 
-      var endpoint = currentProvider === 'openai' ? '/api/voice-openai' : '/api/voice';
+      var endpoint = currentProvider === 'openai' ? '/api/voice-openai'
+                   : currentProvider === 'fish'   ? '/api/voice-fish'
+                   : '/api/voice';
       var res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1627,7 +1662,8 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     btn.disabled = false;
     btn.textContent = '🎙 Generate Voiceover';
   }
-function showVoiceError(msg) {
+
+  function showVoiceError(msg) {
     var box = document.getElementById('voiceError');
     if (!box) return;
     box.textContent = '\u26a0 ' + msg;
@@ -1638,6 +1674,7 @@ function showVoiceError(msg) {
     var box = document.getElementById('voiceError');
     if (box) box.classList.remove('visible');
   }
+
   function stopVoice() {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     var audio = document.getElementById('elAudio');
@@ -2177,60 +2214,70 @@ function showVoiceError(msg) {
     var W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Draw image with Ken Burns zoom effect
+    // Draw image/video — fill frame, Ken Burns zoom
     var scale = kenBurnsScale || 1.0;
-    var iw = img.naturalWidth || img.width;
-    var ih = img.naturalHeight || img.height;
+    var iw = img.naturalWidth || img.videoWidth || img.width || W;
+    var ih = img.naturalHeight || img.videoHeight || img.height || H;
+    if (!iw) iw = W; if (!ih) ih = H;
     var ratio = Math.max(W / iw, H / ih) * scale;
-    var dw = iw * ratio;
-    var dh = ih * ratio;
-    var dx = (W - dw) / 2;
-    var dy = (H - dh) / 2;
+    var dw = iw * ratio, dh = ih * ratio;
+    var dx = (W - dw) / 2, dy = (H - dh) / 2;
     ctx.drawImage(img, dx, dy, dw, dh);
 
-    // Dark overlay for readability
-    ctx.fillStyle = 'rgba(0,0,0,' + (overlayOpacity || 0.5) + ')';
-    ctx.fillRect(0, 0, W, H);
+    // Bottom gradient only — keeps image visible like VEED
+    var botGrad = ctx.createLinearGradient(0, H * 0.4, 0, H);
+    botGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    botGrad.addColorStop(0.5, 'rgba(0,0,0,0.5)');
+    botGrad.addColorStop(1, 'rgba(0,0,0,0.9)');
+    ctx.fillStyle = botGrad;
+    ctx.fillRect(0, H * 0.4, W, H * 0.6);
 
-    // LeadAI watermark top
-    ctx.font = '700 38px sans-serif';
-    ctx.fillStyle = 'rgba(0,229,160,0.85)';
-    ctx.textAlign = 'center';
+    // Small top vignette
+    var topGrad = ctx.createLinearGradient(0, 0, 0, H * 0.25);
+    topGrad.addColorStop(0, 'rgba(0,0,0,0.4)');
+    topGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = topGrad;
+    ctx.fillRect(0, 0, W, H * 0.25);
+
+    // Watermark — small top-left
+    ctx.font = '600 30px sans-serif';
+    ctx.fillStyle = 'rgba(0,229,160,0.75)';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('LeadAI', W/2, 80);
+    ctx.fillText('LeadAI', 48, 52);
 
-    // Caption
+    // Caption — bottom third, like TikTok/VEED
     var cap = getCaptionStyle(captionStyleKey);
     ctx.textBaseline = 'middle';
+    var captionY = H * 0.76;
 
     if (cap.bar) {
-      var barH = 150;
-      var barY = H * 0.7;
-      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      var barH = 160, barY = H * 0.69;
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
       ctx.fillRect(0, barY, W, barH);
       ctx.font = cap.weight + ' ' + cap.size + 'px sans-serif';
       ctx.fillStyle = cap.color;
       ctx.textAlign = 'center';
-      wrapText(ctx, text, W/2, barY + barH/2, W - 80, cap.size + 12, false);
+      wrapText(ctx, text, W/2, barY + barH/2, W - 80, cap.size + 14, false);
     } else {
       ctx.font = cap.weight + ' ' + cap.size + 'px sans-serif';
       ctx.textAlign = 'center';
-      // Stroke for readability over images
       if (cap.stroke) {
         ctx.strokeStyle = cap.stroke;
-        ctx.lineWidth = 20;
+        ctx.lineWidth = 24;
         ctx.lineJoin = 'round';
-        wrapText(ctx, text, W/2, H * 0.62, W - 100, cap.size + 16, true);
+        ctx.lineCap = 'round';
+        wrapText(ctx, text, W/2, captionY, W - 80, cap.size + 18, true);
       }
       ctx.fillStyle = cap.color;
-      wrapText(ctx, text, W/2, H * 0.62, W - 100, cap.size + 16, false);
+      wrapText(ctx, text, W/2, captionY, W - 80, cap.size + 18, false);
     }
 
-    // Progress bar
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.fillRect(60, H - 70, W - 120, 6);
+    // Progress bar — full-width, thin, at very bottom
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(0, H - 10, W, 10);
     ctx.fillStyle = '#00E5A0';
-    ctx.fillRect(60, H - 70, (W - 120) * progress, 6);
+    ctx.fillRect(0, H - 10, W * progress, 10);
   }
 
   function drawFrameNoImage(canvas, text, progress, captionStyleKey) {
@@ -2466,30 +2513,65 @@ Return ONLY valid JSON, no markdown:
   function previewAnimation() {
     if (!videoFrames.length) return;
     var btn = document.querySelector('.btn-play-preview');
+    var audio = document.getElementById('elAudio');
+    var hasAudio = audio && audio.src && audio.src !== window.location.href && audio.duration > 0;
 
-    // If already playing — pause it
+    // If already playing — pause everything
     if (animInterval) {
       clearInterval(animInterval);
       animInterval = null;
-      if (btn) { btn.textContent = '▶ Preview Animation'; btn.style.opacity = '1'; }
+      if (audio) { audio.pause(); audio.currentTime = 0; }
+      if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
       return;
     }
 
-    // Start playing
-    if (btn) { btn.textContent = '⏸ Pause'; btn.style.opacity = '0.85'; }
+    // Calculate ms per frame:
+    // If we have real audio, spread frames evenly across its duration
+    // Otherwise default to 2 seconds per caption
+    var msPerFrame;
+    if (hasAudio && audio.duration && isFinite(audio.duration)) {
+      // Divide audio duration evenly across all frames, min 1s max 4s
+      msPerFrame = Math.min(4000, Math.max(1000, (audio.duration * 1000) / videoFrames.length));
+    } else {
+      msPerFrame = 2000;
+    }
+
+    if (btn) {
+      btn.textContent = hasAudio ? '⏸ Pause' : '⏸ Pause';
+      btn.style.opacity = '0.85';
+    }
+
+    // Start audio from beginning
+    if (hasAudio) {
+      audio.currentTime = 0;
+      audio.play().catch(function(){});
+    }
+
     var canvas = document.getElementById('captionCanvas');
     var i = 0;
-    var msPerFrame = 2000; // 2 seconds per frame — enough time to read each caption
+    renderFrame(canvas, videoFrames[0]);
 
     animInterval = setInterval(function() {
-      renderFrame(canvas, videoFrames[i]);
       i++;
       if (i >= videoFrames.length) {
         clearInterval(animInterval);
         animInterval = null;
-        if (btn) { btn.textContent = '▶ Preview Animation'; btn.style.opacity = '1'; }
+        if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+        return;
       }
+      renderFrame(canvas, videoFrames[i]);
     }, msPerFrame);
+
+    // If audio ends before frames, stop cleanly
+    if (audio) {
+      audio.onended = function() {
+        if (animInterval) {
+          clearInterval(animInterval);
+          animInterval = null;
+        }
+        if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+      };
+    }
   }
 
   // ══════════════════════════════════════════════════
