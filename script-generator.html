@@ -1770,7 +1770,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
     if (currentProvider === 'elevenlabs') {
       try {
-        var res = await fetch('/api/voices');
+        var res = await fetch('/api/voice?list=true');
         if (!res.ok) throw new Error('voices API ' + res.status);
         var data = await res.json();
         if (!data.voices || !data.voices.length) throw new Error('no voices');
@@ -1820,9 +1820,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
         (currentProvider === 'openai' ? 'OpenAI TTS' :
          currentProvider === 'fish'   ? 'Fish Audio' : 'ElevenLabs') + '...';
 
-      var endpoint = currentProvider === 'openai' ? '/api/voice-openai'
-                   : currentProvider === 'fish'   ? '/api/voice-fish'
-                   : '/api/voice';
+      var endpoint = '/api/voice?provider=' + currentProvider;
       var res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3134,7 +3132,7 @@ Return ONLY valid JSON, no markdown:
       var toneEl = document.getElementById('tone');
       var capEl = document.getElementById('captionStyle');
 
-      await fetch('/api/save-video', {
+      await fetch('/api/videos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3180,7 +3178,7 @@ Return ONLY valid JSON, no markdown:
     body.innerHTML = '<div class="history-loading">Loading your videos...</div>';
     try {
       var sid = getSessionId();
-      var res = await fetch('/api/my-videos?session_id=' + encodeURIComponent(sid) + '&limit=30');
+      var res = await fetch('/api/videos?session_id=' + encodeURIComponent(sid) + '&limit=30');
       var data = await res.json();
 
       if (!data.videos || !data.videos.length) {
@@ -3218,13 +3216,13 @@ Return ONLY valid JSON, no markdown:
     // Fetch the full script for this video
     try {
       var sid = getSessionId();
-      var res = await fetch('/api/my-videos?session_id=' + encodeURIComponent(sid) + '&limit=50');
+      var res = await fetch('/api/videos?session_id=' + encodeURIComponent(sid) + '&limit=50');
       var data = await res.json();
       var video = (data.videos || []).find(function(v){ return v.id === id; });
 
       if (!video) {
         // Need to fetch full record with script — do a targeted query
-        var r2 = await fetch('/api/my-videos?session_id=' + encodeURIComponent(sid) + '&id=' + id);
+        var r2 = await fetch('/api/videos?session_id=' + encodeURIComponent(sid) + '&id=' + id);
         var d2 = await r2.json();
         video = d2.videos && d2.videos[0];
       }
@@ -3250,7 +3248,7 @@ Return ONLY valid JSON, no markdown:
     if (!confirm('Delete this video from history?')) return;
     try {
       var sid = getSessionId();
-      await fetch('/api/my-videos?session_id=' + encodeURIComponent(sid) + '&id=' + id, {
+      await fetch('/api/videos?session_id=' + encodeURIComponent(sid) + '&id=' + id, {
         method: 'DELETE',
       });
       loadHistory(); // refresh the list
@@ -3335,10 +3333,10 @@ Return ONLY valid JSON, no markdown:
     document.getElementById('trendRewriteWrap').classList.remove('visible');
 
     try {
-      var res = await fetch('/api/trending', {
+      var res = await fetch('/api/trends?action=scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ niche: niche, count: 8 }),
+        body: JSON.stringify({ niche: niche, count: 8, action: 'scrape' }),
       });
       var data = await res.json();
 
@@ -3418,7 +3416,7 @@ Return ONLY valid JSON, no markdown:
     var audience = document.getElementById('audience') ? document.getElementById('audience').value : 'local business owners';
 
     try {
-      var res = await fetch('/api/rewrite-trend', {
+      var res = await fetch('/api/trends?action=rewrite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
