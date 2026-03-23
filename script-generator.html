@@ -1323,6 +1323,22 @@ Book a free consultation at leadai.guru"
 
 <script>
 
+  // ── Owner bypass — unlimited access for the site owner ──
+  // Visit: leadai.guru/script-generator.html?owner=leadai2026
+  // This sets your browser as permanently unlocked
+  (function(){
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('owner') === 'leadai2026') {
+      localStorage.setItem('leadai_paid', 'true');
+      localStorage.setItem('leadai_plan', 'owner');
+      localStorage.setItem('leadai_credits', '9999');
+      // Clean URL without reloading
+      var url = window.location.pathname;
+      window.history.replaceState({}, '', url);
+      console.log('Owner mode activated — unlimited access enabled');
+    }
+  })();
+
   // ── Usage limit (3 free videos) ──
   var FREE_LIMIT = 3;
 
