@@ -1028,9 +1028,14 @@ Book a free consultation at leadai.guru"
           <span id="voiceStatusText">Generating voiceover...</span>
         </div>
         <audio id="elAudio" controls style="width:100%;margin-top:0.75rem;border-radius:8px;accent-color:var(--accent);display:none;"></audio>
-        <button id="dlAudioBtn" onclick="downloadAudio()" style="display:none;margin-top:0.6rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.25);color:var(--accent);font-family:var(--font-body);font-size:0.8rem;font-weight:600;padding:0.45rem 1rem;border-radius:7px;cursor:pointer;">
-          ⬇ Download MP3
-        </button>
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem;flex-wrap:wrap;">
+          <button id="dlAudioBtn" onclick="downloadAudio()" style="display:none;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.25);color:var(--accent);font-family:var(--font-body);font-size:0.8rem;font-weight:600;padding:0.45rem 1rem;border-radius:7px;cursor:pointer;">
+            ⬇ Download MP3
+          </button>
+          <span id="syncBadge" style="display:none;align-items:center;gap:0.35rem;background:rgba(0,217,126,0.1);border:1px solid rgba(0,217,126,0.25);color:var(--accent);font-size:0.72rem;font-weight:600;padding:0.25rem 0.75rem;border-radius:100px;">
+            ⚡ Captions synced to audio
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -1340,6 +1345,10 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
       const text = data.content?.[0]?.text || '';
       lastScript = text;
+      // Reset sync state for new script
+      whisperCaptions = [];
+      var sb = document.getElementById('syncBadge');
+      if (sb) sb.style.display = 'none';
       renderScript(text);
 
     } catch (err) {
@@ -1521,15 +1530,12 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     }
 
     if (currentProvider === 'fish') {
-      // Fish Audio — top preset voices from fish.audio
-      // Users can add their own cloned voice IDs here too
+      // Fish Audio voices
+      // Default = no reference_id = Fish Audio picks the best default voice
+      // Real IDs: go to fish.audio → browse voices → click any voice → copy the ID from the URL
       var fishVoices = [
-        { id:'default',                            name:'Fish Default — natural, balanced' },
-        { id:'54a5170264694bfc8e9ad98df7bd89c3',   name:'Anna — female, warm English' },
-        { id:'0eb6c58816b44d16ab8040a73bfde2f2',   name:'John — male, professional' },
-        { id:'7f92f8efb8ec43bf81429cc1c9199cb1',   name:'Emily — female, energetic' },
-        { id:'ad8bfee14f5a4fe0a22bf85df9f5e96d',   name:'David — male, deep, authoritative' },
-        { id:'custom',                             name:'My Cloned Voice (paste ID below)' },
+        { id:'default', name:'Fish Default — natural, balanced (recommended to start)' },
+        { id:'YOUR_VOICE_ID_HERE', name:'My Custom Voice (paste your ID from fish.audio)' },
       ];
       select.innerHTML = '';
       fishVoices.forEach(function(v){
@@ -1538,13 +1544,14 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
         o.textContent = v.name;
         select.appendChild(o);
       });
-      // Show a helper for custom voice ID
+      // Remove old helper if present, add fresh one
+      var old = document.getElementById('fishVoiceHelper');
+      if (old) old.remove();
       var helper = document.createElement('div');
       helper.id = 'fishVoiceHelper';
-      helper.style.cssText = 'font-size:0.72rem;color:var(--muted);margin-top:0.4rem;';
-      helper.innerHTML = '💡 Find more voices at <a href="https://fish.audio" target="_blank" style="color:var(--accent)">fish.audio</a> — copy the voice ID and paste it as the option value.';
-      var existing = document.getElementById('fishVoiceHelper');
-      if (!existing) { select.parentNode.appendChild(helper); }
+      helper.style.cssText = 'font-size:0.72rem;color:var(--muted);margin-top:0.5rem;line-height:1.6;';
+      helper.innerHTML = '💡 To use a specific voice: go to <a href="https://fish.audio" target="_blank" style="color:var(--accent)">fish.audio</a> → browse voices → open a voice → copy the ID from the URL (e.g. <code style="background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;font-size:0.68rem">abc123def456...</code>) → paste it in the dropdown above.';
+      select.parentNode.appendChild(helper);
       return;
     }
 
@@ -1645,14 +1652,38 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       audio.style.display = 'block';
       audio.play();
 
-      document.getElementById('voiceStatusText').textContent = '✓ Voiceover ready';
-      document.getElementById('audioIndicator').style.display = 'none';
-      document.getElementById('dlAudioBtn').style.display = 'inline-block';
-      document.getElementById('videoCard').classList.add('visible');
+      document.getElementById('voiceStatusText').textContent = '✓ Voice ready — syncing captions with Whisper...';
+      document.getElementById('audioIndicator').style.display = 'inline-block';
+      document.getElementById('dlAudioBtn').style.display = 'none';
 
-      // Show the merge button
-      document.getElementById('dlVideoAudioBtn').style.display = 'inline-flex';
-      document.getElementById('videoNote').textContent = '🎬 Use "Download MP4 + Voice" to merge voice and video into one file.';
+      // Auto-run Whisper sync immediately — gives word-level caption timing
+      whisperCaptions = [];
+      getWhisperSync(elAudioBlob).then(function(caps) {
+        if (caps && caps.length) {
+          whisperCaptions = caps;
+          document.getElementById('voiceStatusText').textContent =
+            '✓ Voice + captions synced — ' + caps.length + ' frames locked to audio';
+          var sb = document.getElementById('syncBadge');
+          if (sb) sb.style.display = 'inline-flex';
+        } else {
+          document.getElementById('voiceStatusText').textContent = '✓ Voiceover ready';
+        }
+        document.getElementById('audioIndicator').style.display = 'none';
+        document.getElementById('dlAudioBtn').style.display = 'inline-block';
+        document.getElementById('videoCard').classList.add('visible');
+        document.getElementById('dlVideoAudioBtn').style.display = 'inline-flex';
+        document.getElementById('videoNote').textContent =
+          '🎬 Captions locked to voice — click Download MP4 + Voice for your final video.';
+      }).catch(function(e) {
+        console.warn('Whisper sync failed:', e.message);
+        document.getElementById('voiceStatusText').textContent = '✓ Voiceover ready';
+        document.getElementById('audioIndicator').style.display = 'none';
+        document.getElementById('dlAudioBtn').style.display = 'inline-block';
+        document.getElementById('videoCard').classList.add('visible');
+        document.getElementById('dlVideoAudioBtn').style.display = 'inline-flex';
+        document.getElementById('videoNote').textContent =
+          '🎬 Use "Download MP4 + Voice" to merge voice and video.';
+      });
 
     } catch(err) {
       showVoiceError('Voice error: ' + err.message);
@@ -1668,6 +1699,31 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     if (!box) return;
     box.textContent = '\u26a0 ' + msg;
     box.classList.add('visible');
+  }
+
+  // ══════════════════════════════════════════════════
+  // WHISPER CAPTION SYNC
+  // Sends MP3 blob → OpenAI Whisper → word timestamps
+  // Returns: [ { text, start, end, progress }, ... ]
+  // ══════════════════════════════════════════════════
+  async function getWhisperSync(audioBlob) {
+    if (!audioBlob) throw new Error('No audio blob');
+    var wpc = parseInt(document.getElementById('wordsPerFrame').value) || 4;
+
+    var res = await fetch('/api/whisper-sync?wpc=' + wpc, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: audioBlob,
+    });
+
+    if (!res.ok) {
+      var err = await res.json().catch(function(){ return {}; });
+      throw new Error(err.error || 'Whisper API error ' + res.status);
+    }
+
+    var data = await res.json();
+    if (data.warning) console.warn('Whisper warning:', data.warning);
+    return data.captions || [];
   }
 
   function hideVoiceError() {
@@ -1773,6 +1829,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
   // ── Video Generation (Week 3) ──
   let videoFrames = [];
+  let whisperCaptions = [];   // [ { text, start, end, progress } ] from Whisper
   let animInterval = null;
   let loadedImages = [];
   let selectedImageUrls = [];
@@ -2511,68 +2568,105 @@ Return ONLY valid JSON, no markdown:
   }
 
   function previewAnimation() {
-    if (!videoFrames.length) return;
+    if (!videoFrames.length && !whisperCaptions.length) return;
     var btn = document.querySelector('.btn-play-preview');
     var audio = document.getElementById('elAudio');
-    var hasAudio = audio && audio.src && audio.src !== window.location.href && audio.duration > 0;
+    var hasAudio = audio && audio.src && audio.src !== window.location.href;
 
-    // If already playing — pause everything
+    // Stop if already playing
     if (animInterval) {
       clearInterval(animInterval);
       animInterval = null;
+      if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
       if (audio) { audio.pause(); audio.currentTime = 0; }
       if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
       return;
     }
 
-    // Calculate ms per frame:
-    // If we have real audio, spread frames evenly across its duration
-    // Otherwise default to 2 seconds per caption
+    if (btn) { btn.textContent = '⏸ Pause'; btn.style.opacity = '0.85'; }
+
+    var canvas = document.getElementById('captionCanvas');
+
+    // ── MODE A: Whisper captions — perfect word-sync ──
+    if (whisperCaptions.length && hasAudio) {
+      audio.currentTime = 0;
+      audio.play().catch(function(){});
+
+      var caps = whisperCaptions;
+      var totalDur = audio.duration || caps[caps.length - 1].end;
+      var capIdx = 0;
+
+      // Find the right media for rendering (use first videoFrame's media)
+      var sampleFrame = videoFrames.length ? videoFrames[0] : null;
+      var capStyle = document.getElementById('captionStyle').value;
+      var overlay = parseFloat(document.getElementById('overlayOpacity').value) || 0.3;
+
+      function tickWhisper() {
+        if (!audio || audio.paused || audio.ended) {
+          if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+          animRaf = null;
+          return;
+        }
+        var now = audio.currentTime;
+        var progress = now / totalDur;
+
+        // Find which caption we should be showing
+        var cap = caps[capIdx];
+        // Advance caption if we're past its end time
+        while (capIdx < caps.length - 1 && now >= caps[capIdx + 1].start) {
+          capIdx++;
+          cap = caps[capIdx];
+        }
+
+        // Render the frame with current caption and correct progress
+        if (sampleFrame && sampleFrame.media) {
+          drawFrameWithImage(canvas, cap.text, sampleFrame.media.el, progress, capStyle, overlay, 1.0);
+        } else {
+          drawFrameNoImage(canvas, cap.text, progress, capStyle);
+        }
+
+        animRaf = requestAnimationFrame(tickWhisper);
+      }
+
+      animRaf = requestAnimationFrame(tickWhisper);
+
+      audio.onended = function() {
+        if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
+        if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+      };
+      return;
+    }
+
+    // ── MODE B: No Whisper — evenly spaced fallback ──
     var msPerFrame;
     if (hasAudio && audio.duration && isFinite(audio.duration)) {
-      // Divide audio duration evenly across all frames, min 1s max 4s
-      msPerFrame = Math.min(4000, Math.max(1000, (audio.duration * 1000) / videoFrames.length));
+      msPerFrame = Math.min(4000, Math.max(800, (audio.duration * 1000) / videoFrames.length));
     } else {
       msPerFrame = 2000;
     }
 
-    if (btn) {
-      btn.textContent = hasAudio ? '⏸ Pause' : '⏸ Pause';
-      btn.style.opacity = '0.85';
-    }
+    if (hasAudio) { audio.currentTime = 0; audio.play().catch(function(){}); }
 
-    // Start audio from beginning
-    if (hasAudio) {
-      audio.currentTime = 0;
-      audio.play().catch(function(){});
-    }
-
-    var canvas = document.getElementById('captionCanvas');
     var i = 0;
     renderFrame(canvas, videoFrames[0]);
-
     animInterval = setInterval(function() {
       i++;
       if (i >= videoFrames.length) {
-        clearInterval(animInterval);
-        animInterval = null;
+        clearInterval(animInterval); animInterval = null;
         if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
         return;
       }
       renderFrame(canvas, videoFrames[i]);
     }, msPerFrame);
 
-    // If audio ends before frames, stop cleanly
     if (audio) {
       audio.onended = function() {
-        if (animInterval) {
-          clearInterval(animInterval);
-          animInterval = null;
-        }
+        if (animInterval) { clearInterval(animInterval); animInterval = null; }
         if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
       };
     }
   }
+  var animRaf = null;
 
   // ══════════════════════════════════════════════════
   // MP4 EXPORT — ffmpeg-wasm (runs free in browser)
