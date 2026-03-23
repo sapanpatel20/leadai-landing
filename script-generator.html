@@ -1077,17 +1077,14 @@ Book a free consultation at leadai.guru"
       <div style="margin-bottom:1rem;">
         <label style="font-size:0.72rem;font-weight:600;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.5rem;">Voice Engine</label>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;" id="providerChips">
+          <button class="provider-chip selected" data-provider="fish" onclick="selectProvider(this)">
+            Fish Audio <span style="opacity:0.55;font-size:0.68rem;">#1 TTS quality · voice clone</span>
+          </button>
           <button class="provider-chip" data-provider="openai" onclick="selectProvider(this)">
             OpenAI TTS <span style="opacity:0.55;font-size:0.68rem;">~$0.001/video · great quality</span>
           </button>
-          <button class="provider-chip" data-provider="fish" onclick="selectProvider(this)">
-            Fish Audio <span style="opacity:0.55;font-size:0.68rem;">#1 TTS quality · voice clone</span>
-          </button>
           <button class="provider-chip" data-provider="elevenlabs" onclick="selectProvider(this)">
-            ElevenLabs <span style="opacity:0.55;font-size:0.68rem;">premium · most natural</span>
-          </button>
-          <button class="provider-chip selected" data-provider="browser" onclick="selectProvider(this)">
-            Browser (free) <span style="opacity:0.55;font-size:0.68rem;">no cost · works instantly</span>
+            ElevenLabs <span style="opacity:0.55;font-size:0.68rem;">premium · Agency tier</span>
           </button>
         </div>
       </div>
@@ -1565,7 +1562,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   // ══════════════════════════════════════════════════
   // VOICE PROVIDER STATE
   // ══════════════════════════════════════════════════
-  var currentProvider = 'browser';
+  var currentProvider = 'fish';
   var elAudioBlob = null;
 
   function selectProvider(el) {
@@ -1581,25 +1578,6 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   async function loadVoices() {
     var select = document.getElementById('voiceId');
     select.innerHTML = '<option value="">Loading...</option>';
-
-    if (currentProvider === 'browser') {
-      // Browser Web Speech API voices
-      var voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-      if (!voices.length) {
-        await new Promise(function(r){ setTimeout(r, 300); });
-        voices = window.speechSynthesis.getVoices();
-      }
-      select.innerHTML = '';
-      voices.filter(function(v){ return v.lang && v.lang.startsWith('en'); })
-        .forEach(function(v, i) {
-          var o = document.createElement('option');
-          o.value = 'browser_' + i;
-          o.textContent = v.name + ' (' + v.lang + ')';
-          select.appendChild(o);
-        });
-      if (!select.options.length) select.innerHTML = '<option value="browser_0">Default voice</option>';
-      return;
-    }
 
     if (currentProvider === 'openai') {
       // OpenAI TTS voices — hardcoded, no API call needed
@@ -1697,29 +1675,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     document.getElementById('elAudio').style.display = 'none';
     document.getElementById('dlAudioBtn').style.display = 'none';
 
-    if (currentProvider === 'browser') {
-      // ── Browser Web Speech (free, no download) ──
-      if (!window.speechSynthesis) { showVoiceError('Browser TTS not supported. Try Chrome.'); btn.disabled=false; btn.textContent='🎙 Generate Voiceover'; return; }
-      window.speechSynthesis.cancel();
-      var utter = new SpeechSynthesisUtterance(textToRead);
-      var voiceVal = document.getElementById('voiceId').value;
-      if (voiceVal && voiceVal.startsWith('browser_')) {
-        var idx = parseInt(voiceVal.replace('browser_',''));
-        var voices = window.speechSynthesis.getVoices();
-        if (voices[idx]) utter.voice = voices[idx];
-      }
-      document.getElementById('voiceStatusText').textContent = '🔊 Playing via browser (free — no download available)';
-      utter.onend = function() {
-        btn.disabled=false; btn.textContent='🎙 Generate Voiceover';
-        document.getElementById('voiceStatusText').textContent = 'Done — upgrade to OpenAI or ElevenLabs to download MP3';
-        document.getElementById('videoCard').classList.add('visible');
-      };
-      utter.onerror = function(e) { showVoiceError('Browser speech error: ' + e.error); btn.disabled=false; btn.textContent='🎙 Generate Voiceover'; };
-      window.speechSynthesis.speak(utter);
-      return;
-    }
-
-    // ── API-based providers (OpenAI or ElevenLabs) ──
+    // ── Voice API providers: Fish Audio · OpenAI TTS · ElevenLabs ──
     try {
       var voiceId = document.getElementById('voiceId').value;
       document.getElementById('voiceStatusText').textContent = 'Sending to ' +
@@ -1829,7 +1785,6 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
   }
 
   function stopVoice() {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
     var audio = document.getElementById('elAudio');
     if (audio) { audio.pause(); audio.currentTime = 0; }
     document.getElementById('voiceBtn').style.display = 'flex';
@@ -3010,9 +2965,6 @@ Return ONLY valid JSON, no markdown:
 
 
   // ── Init voices on page load ──
-  if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = function(){ if(currentProvider==='browser') loadVoices(); };
-  }
   loadVoices();
   updateUsageUI(getUsage().count);
 
