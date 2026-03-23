@@ -1281,20 +1281,36 @@ Book a free consultation at leadai.guru"
     <div class="paywall-modal">
       <div class="paywall-icon">🚀</div>
       <div class="paywall-title">You've used your <span>3 free</span> videos</div>
-      <div class="paywall-sub">Upgrade to keep generating unlimited lead videos. No contracts, cancel anytime.</div>
-      <div class="paywall-limit">⚡ Free plan: 3 videos · Paid plan: Unlimited</div>
+      <div class="paywall-sub">Choose how you want to continue — pay only for what you use, or go unlimited.</div>
+      <div class="paywall-limit">⚡ Free plan: 3 videos/month · No credit card needed to start</div>
       <div class="paywall-plans">
-        <a href="pricing.html#checkout-starter" class="paywall-plan" onclick="startCheckout('starter',false,event)">
-          <div><div class="paywall-plan-name">Starter</div><div style="font-size:0.75rem;color:var(--muted);">10 videos/mo · 1 platform</div></div>
-          <div class="paywall-plan-price">$19/mo</div>
+        <a href="pricing.html" class="paywall-plan" onclick="buyCredits(1, event)">
+          <div>
+            <div class="paywall-plan-name">Pay Per Video</div>
+            <div style="font-size:0.75rem;color:var(--muted);">1 video · No subscription · Credits never expire</div>
+          </div>
+          <div class="paywall-plan-price">$3</div>
         </a>
-        <a href="pricing.html#checkout-pro" class="paywall-plan featured-plan" onclick="startCheckout('pro',false,event)">
-          <div><div class="paywall-plan-name">Pro <span class="paywall-plan-badge">Most popular</span></div><div style="font-size:0.75rem;color:var(--muted);">50 videos/mo · All platforms</div></div>
-          <div class="paywall-plan-price">$49/mo</div>
+        <a href="pricing.html" class="paywall-plan" onclick="buyCredits(10, event)">
+          <div>
+            <div class="paywall-plan-name">10 Video Credits</div>
+            <div style="font-size:0.75rem;color:var(--muted);">$3 each · Save time buying in bulk</div>
+          </div>
+          <div class="paywall-plan-price">$30</div>
         </a>
-        <a href="pricing.html#checkout-agency" class="paywall-plan" onclick="startCheckout('agency',false,event)">
-          <div><div class="paywall-plan-name">Agency</div><div style="font-size:0.75rem;color:var(--muted);">Unlimited · 10 client accounts</div></div>
-          <div class="paywall-plan-price">$99/mo</div>
+        <a href="pricing.html" class="paywall-plan featured-plan" onclick="startCheckout('pro', false, event)">
+          <div>
+            <div class="paywall-plan-name">Pro <span class="paywall-plan-badge">Best value</span></div>
+            <div style="font-size:0.75rem;color:var(--muted);">30 videos/month · $0.97 per video · All features</div>
+          </div>
+          <div class="paywall-plan-price">$29/mo</div>
+        </a>
+        <a href="pricing.html" class="paywall-plan" onclick="startCheckout('agency', false, event)">
+          <div>
+            <div class="paywall-plan-name">Agency</div>
+            <div style="font-size:0.75rem;color:var(--muted);">100 videos/month · ElevenLabs voice · Trending tab</div>
+          </div>
+          <div class="paywall-plan-price">$79/mo</div>
         </a>
       </div>
       <div class="paywall-dismiss" onclick="dismissPaywall()">I'll upgrade later →</div>
@@ -1312,29 +1328,35 @@ Book a free consultation at leadai.guru"
 
   function getUsage() {
     var paid = localStorage.getItem('leadai_paid') === 'true';
+    var plan = localStorage.getItem('leadai_plan') || 'free';
     var count = parseInt(localStorage.getItem('leadai_video_count') || '0');
-    return { paid: paid, count: count };
+    var credits = parseInt(localStorage.getItem('leadai_credits') || '0');
+    return { paid: paid, plan: plan, count: count, credits: credits };
   }
 
   function incrementUsage() {
     var u = getUsage();
-    if (!u.paid) {
-      var next = u.count + 1;
-      localStorage.setItem('leadai_video_count', next.toString());
-      updateUsageUI(next);
-      if (next >= FREE_LIMIT) {
-        setTimeout(function() { showPaywall(); }, 1500);
-      }
+    if (u.paid) return; // subscription — no limit tracked
+    if (u.credits > 0) {
+      // use one purchased credit
+      localStorage.setItem('leadai_credits', String(u.credits - 1));
+      updateUsageUI(u.count);
+      return;
+    }
+    // free tier
+    var next = u.count + 1;
+    localStorage.setItem('leadai_video_count', next.toString());
+    updateUsageUI(next);
+    if (next >= FREE_LIMIT) {
+      setTimeout(function() { showPaywall(); }, 1500);
     }
   }
 
   function checkUsageBeforeGenerate() {
     var u = getUsage();
-    if (u.paid) return true; // paid — always allow
-    if (u.count >= FREE_LIMIT) {
-      showPaywall();
-      return false;
-    }
+    if (u.paid) return true;          // active subscription
+    if (u.credits > 0) return true;   // has purchased credits
+    if (u.count >= FREE_LIMIT) { showPaywall(); return false; }
     return true;
   }
 
@@ -1351,6 +1373,10 @@ Book a free consultation at leadai.guru"
     if (!counter) return;
     var u = getUsage();
     if (u.paid) { counter.style.display = 'none'; return; }
+    if (u.credits > 0) {
+      counter.innerHTML = '<span style="color:var(--accent)">⚡ ' + u.credits + ' video credit' + (u.credits !== 1 ? 's' : '') + ' remaining</span>';
+      return;
+    }
     var remaining = Math.max(0, FREE_LIMIT - count);
     var pips = '';
     for (var i = 0; i < FREE_LIMIT; i++) {
@@ -1373,6 +1399,35 @@ Book a free consultation at leadai.guru"
     } catch(err) {
       window.location.href = 'pricing.html';
     }
+  }
+
+  async function buyCredits(qty, e) {
+    if (e) e.preventDefault();
+    try {
+      var res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'credits', quantity: qty || 1 })
+      });
+      var data = await res.json();
+      if (data.url) { window.location.href = data.url; }
+      else { window.location.href = 'pricing.html'; }
+    } catch(err) {
+      window.location.href = 'pricing.html';
+    }
+  }
+
+  // ── Credit helpers ──
+  function getCredits() {
+    return parseInt(localStorage.getItem('leadai_credits') || '0');
+  }
+  function useOneCredit() {
+    var c = getCredits();
+    if (c > 0) {
+      localStorage.setItem('leadai_credits', String(c - 1));
+      return true;
+    }
+    return false;
   }
 
   let lastScript = '';
