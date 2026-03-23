@@ -532,23 +532,23 @@
     <!-- Starter -->
     <div class="plan-card">
       <div class="plan-header">
-        <div class="plan-name">Starter</div>
+        <div class="plan-name">Pay Per Video</div>
         <div class="plan-price">
           <span class="price-dollar">$</span>
-          <span class="price-amount" id="price-starter">19</span>
-          <span class="price-period">/mo</span>
+          <span class="price-amount" id="price-starter">3</span>
+          <span class="price-period">/video</span>
         </div>
         <div class="price-annual" id="annual-starter"></div>
-        <div class="plan-desc">Perfect for solo agents and coaches just getting started with video marketing.</div>
+        <div class="plan-desc">No subscription. Pay only when you generate. Credits never expire.</div>
       </div>
       <div class="plan-divider"></div>
       <div class="plan-features">
-        <div class="feature-item highlight"><div class="feature-check">✓</div> 10 AI videos per month</div>
-        <div class="feature-item highlight"><div class="feature-check">✓</div> AI script generator</div>
-        <div class="feature-item highlight"><div class="feature-check">✓</div> AI voiceover (ElevenLabs)</div>
-        <div class="feature-item highlight"><div class="feature-check">✓</div> Caption video export</div>
-        <div class="feature-item"><div class="feature-check">✓</div> 1 platform (Instagram or TikTok)</div>
-        <div class="feature-item"><div class="feature-check">✓</div> Email support</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> 1 video per credit purchased</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Fish Audio real voice + MP3</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Whisper caption sync</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> No watermark</div>
+        <div class="feature-item"><div class="feature-check">✓</div> Download MP4 + voice merged</div>
+        <div class="feature-item"><div class="feature-check">✓</div> Credits never expire</div>
       </div>
       <button class="plan-btn outline" onclick="startCheckout('starter')">Get Started →</button>
     </div>
@@ -560,7 +560,7 @@
         <div class="plan-name">Pro</div>
         <div class="plan-price">
           <span class="price-dollar">$</span>
-          <span class="price-amount" id="price-pro">49</span>
+          <span class="price-amount" id="price-pro">29</span>
           <span class="price-period">/mo</span>
         </div>
         <div class="price-annual" id="annual-pro"></div>
@@ -568,15 +568,15 @@
       </div>
       <div class="plan-divider"></div>
       <div class="plan-features">
-        <div class="feature-item highlight"><div class="feature-check">✓</div> 50 AI videos per month</div>
-        <div class="feature-item highlight"><div class="feature-check">✓</div> Everything in Starter</div>
-        <div class="feature-item highlight"><div class="feature-check">✓</div> 3 platforms (Instagram, TikTok, YouTube)</div>
-        <div class="feature-item highlight"><div class="feature-check">✓</div> Auto-scheduling (Buffer integration)</div>
-        <div class="feature-item highlight"><div class="feature-check">✓</div> Lead capture page per video</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> 30 videos per month</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Fish Audio voice + Whisper sync</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> 🔥 Trending video finder (Apify)</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> Scene-matched Pexels videos</div>
+        <div class="feature-item highlight"><div class="feature-check">✓</div> No watermark · All platforms</div>
         <div class="feature-item"><div class="feature-check">✓</div> Priority support</div>
         <div class="feature-item"><div class="feature-check">✓</div> Analytics dashboard</div>
       </div>
-      <button class="plan-btn primary" onclick="startCheckout('pro')">Start Free Trial →</button>
+      <button class="plan-btn primary" onclick="startCheckout('pro')">Start Pro — $29/mo →</button>
     </div>
 
     <!-- Agency -->
@@ -585,7 +585,7 @@
         <div class="plan-name">Agency</div>
         <div class="plan-price">
           <span class="price-dollar">$</span>
-          <span class="price-amount" id="price-agency">99</span>
+          <span class="price-amount" id="price-agency">79</span>
           <span class="price-period">/mo</span>
         </div>
         <div class="price-annual" id="annual-agency"></div>
@@ -601,7 +601,7 @@
         <div class="feature-item"><div class="feature-check">✓</div> 1-on-1 onboarding call</div>
         <div class="feature-item"><div class="feature-check">✓</div> Custom integrations</div>
       </div>
-      <button class="plan-btn outline" onclick="startCheckout('starter')">Get Started →</button>
+      <button class="plan-btn outline" onclick="startCheckout('agency')">Start Agency — $79/mo →</button>
     </div>
 
   </div>
@@ -679,9 +679,9 @@
         </select>
         <select class="wl-select" id="wlPlan">
           <option value="" disabled selected>Which plan interests you?</option>
-          <option value="starter">Starter — $19/mo</option>
-          <option value="pro">Pro — $49/mo (most popular)</option>
-          <option value="agency">Agency — $99/mo</option>
+          <option value="starter">Pay Per Video — $3/video</option>
+          <option value="pro">Pro — $29/mo (most popular)</option>
+          <option value="agency">Agency — $79/mo</option>
         </select>
         <button class="btn-join" id="joinBtn" onclick="joinWaitlist()">
           ✦ Secure My Spot
@@ -757,7 +757,7 @@
 <script>
   // ── Billing toggle ──
   var isAnnual = false;
-  var prices = { starter: 19, pro: 49, agency: 99 };
+  var prices = { starter: 3, pro: 29, agency: 79 };
 
   function toggleBilling() {
     isAnnual = !isAnnual;
@@ -859,16 +859,35 @@
       if (data.url) {
         window.location.href = data.url;
       } else {
-        // Stripe not set up yet — send to waitlist section
         document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
         btn.disabled = false;
-        btn.textContent = plan === 'pro' ? 'Start Free Trial →' : plan === 'starter' ? 'Get Started →' : 'Contact Sales →';
+        btn.textContent = plan === 'pro' ? 'Start Pro — $29/mo →' : plan === 'agency' ? 'Start Agency — $79/mo →' : 'Buy 1 Credit — $3 →';
       }
     } catch(err) {
       document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
       btn.disabled = false;
-      btn.textContent = plan === 'pro' ? 'Start Free Trial →' : plan === 'starter' ? 'Get Started →' : 'Contact Sales →';
+      btn.textContent = plan === 'pro' ? 'Start Pro — $29/mo →' : plan === 'agency' ? 'Start Agency — $79/mo →' : 'Buy 1 Credit — $3 →';
     }
+  }
+
+  async function buyCredits(qty) {
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Loading...';
+    try {
+      var res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'credits', quantity: qty || 1 })
+      });
+      var data = await res.json();
+      if (data.url) { window.location.href = data.url; }
+      else { document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' }); }
+    } catch(err) {
+      document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
+    }
+    btn.disabled = false;
+    btn.textContent = 'Buy 1 Credit — $3 →';
   }
 
 </script>
