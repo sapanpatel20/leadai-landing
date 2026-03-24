@@ -1707,7 +1707,38 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     document.querySelectorAll('.provider-chip').forEach(function(c){ c.classList.remove('selected'); });
     el.classList.add('selected');
     currentProvider = el.dataset.provider;
+    // Remove Fish custom row if switching away
+    var row = document.getElementById('fishCustomRow');
+    var help = document.getElementById('fishVoiceHelper');
+    if (row) row.remove();
+    if (help) help.remove();
     loadVoices();
+  }
+
+  // Format big numbers: 12345 → 12.3K
+  function fmt(n) {
+    if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+    if (n >= 1000) return (n/1000).toFixed(1)+'K';
+    return String(n);
+  }
+
+  // Apply a custom Fish Audio voice ID typed by the user
+  function applyCustomFishVoice() {
+    var input = document.getElementById('fishCustomId');
+    if (!input || !input.value.trim()) return;
+    var id = input.value.trim();
+    var select = document.getElementById('voiceId');
+    // Check if already in list
+    for (var i = 0; i < select.options.length; i++) {
+      if (select.options[i].value === id) { select.value = id; return; }
+    }
+    // Add it
+    var o = document.createElement('option');
+    o.value = id;
+    o.textContent = '🎤 Custom: ' + id.slice(0, 12) + '...';
+    select.appendChild(o);
+    select.value = id;
+    input.value = '';
   }
 
   // ══════════════════════════════════════════════════
@@ -1743,28 +1774,71 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     }
 
     if (currentProvider === 'fish') {
-      // Fish Audio voices
-      // Default = no reference_id = Fish Audio picks the best default voice
-      // Real IDs: go to fish.audio → browse voices → click any voice → copy the ID from the URL
-      var fishVoices = [
-        { id:'default', name:'Fish Default — natural, balanced (recommended to start)' },
-        { id:'YOUR_VOICE_ID_HERE', name:'My Custom Voice (paste your ID from fish.audio)' },
-      ];
-      select.innerHTML = '';
-      fishVoices.forEach(function(v){
-        var o = document.createElement('option');
-        o.value = v.id;
-        o.textContent = v.name;
-        select.appendChild(o);
-      });
-      // Remove old helper if present, add fresh one
+      select.innerHTML = '<option value="">Loading voices...</option>';
+
+      // Remove old helper
       var old = document.getElementById('fishVoiceHelper');
       if (old) old.remove();
-      var helper = document.createElement('div');
-      helper.id = 'fishVoiceHelper';
-      helper.style.cssText = 'font-size:0.72rem;color:var(--muted);margin-top:0.5rem;line-height:1.6;';
-      helper.innerHTML = '💡 To use a specific voice: go to <a href="https://fish.audio" target="_blank" style="color:var(--accent)">fish.audio</a> → browse voices → open a voice → copy the ID from the URL (e.g. <code style="background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;font-size:0.68rem">abc123def456...</code>) → paste it in the dropdown above.';
-      select.parentNode.appendChild(helper);
+
+      // Fetch popular voices from Fish Audio public library
+      try {
+        var res = await fetch('/api/voice?list=true&provider=fish');
+        if (!res.ok) throw new Error('API ' + res.status);
+        var data = await res.json();
+        var voices = data.voices || [];
+
+        select.innerHTML = '';
+
+        // Always add default first
+        var defOpt = document.createElement('option');
+        defOpt.value = 'default';
+        defOpt.textContent = '⭐ Fish Default — natural, balanced';
+        select.appendChild(defOpt);
+
+        // Add fetched voices
+        voices.filter(function(v){ return v.id !== 'default'; })
+          .forEach(function(v) {
+            var o = document.createElement('option');
+            o.value = v.id;
+            o.textContent = v.name + (v.description ? ' — ' + v.description : '') + (v.uses ? ' (' + fmt(v.uses) + ' uses)' : '');
+            select.appendChild(o);
+          });
+
+        // Custom voice input row
+        var customRow = document.createElement('div');
+        customRow.id = 'fishCustomRow';
+        customRow.style.cssText = 'display:flex;gap:0.5rem;margin-top:0.5rem;';
+        customRow.innerHTML =
+          '<input id="fishCustomId" type="text" placeholder="Paste custom voice ID from fish.audio" ' +
+          'style="flex:1;background:rgba(255,255,255,0.04);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-body);font-size:0.8rem;padding:0.45rem 0.75rem;outline:none;" />' +
+          '<button onclick="applyCustomFishVoice()" style="background:var(--accent-dim);border:0.5px solid rgba(0,229,160,0.3);color:var(--accent);font-family:var(--font-body);font-size:0.78rem;font-weight:600;padding:0.45rem 0.85rem;border-radius:7px;cursor:pointer;white-space:nowrap;">Use ID</button>';
+
+        var helper = document.createElement('div');
+        helper.id = 'fishVoiceHelper';
+        helper.style.cssText = 'font-size:0.72rem;color:var(--muted2);margin-top:0.35rem;line-height:1.5;';
+        helper.innerHTML = '💡 Browse 2M+ voices at <a href="https://fish.audio" target="_blank" style="color:var(--accent)">fish.audio</a> → open any voice → copy ID from URL → paste above.';
+
+        select.parentNode.appendChild(customRow);
+        select.parentNode.appendChild(helper);
+
+      } catch(err) {
+        // Hard fallback — curated list
+        var fallback = [
+          { id:'default',                          name:'⭐ Fish Default — natural, balanced' },
+          { id:'54a5170264694bfc8e9ad98df7bd89c3', name:'Alex — male, professional' },
+          { id:'0eb6c58816b44d16ab8040a73bfde2f2', name:'Sarah — female, warm' },
+          { id:'7f92f8efb8ec43bf81429cc1c9199cb1', name:'James — male, authoritative' },
+          { id:'ad8bfee14f5a4fe0a22bf85df9f5e96d', name:'Emma — female, energetic' },
+          { id:'5e9da954905c4fd38a291b21a86fe7ee', name:'David — male, deep broadcast' },
+          { id:'934032efb98b4355b4e34a66a3e48d67', name:'Olivia — female, conversational' },
+        ];
+        select.innerHTML = '';
+        fallback.forEach(function(v){
+          var o = document.createElement('option');
+          o.value = v.id; o.textContent = v.name;
+          select.appendChild(o);
+        });
+      }
       return;
     }
 
