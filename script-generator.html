@@ -1343,6 +1343,21 @@ Book a free consultation at leadai.guru"
 
 
 
+  <!-- Video Preview Modal -->
+  <div id="videoPreviewModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;gap:1rem;">
+    <div style="position:relative;width:min(360px,90vw);background:#000;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);">
+      <video id="modalVideoEl" controls autoplay playsinline style="width:100%;display:block;max-height:65vh;object-fit:contain;background:#000;"></video>
+      <div style="position:absolute;top:10px;right:10px;">
+        <button onclick="closeVideoPreview()" style="width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;">
+      <button id="modalSelectBtn" onclick="selectVideoFromModal()" style="background:var(--accent);color:#060A12;border:none;border-radius:9px;font-family:var(--font-body);font-weight:700;font-size:0.9rem;padding:0.7rem 1.75rem;cursor:pointer;">✓ Select This Video</button>
+      <button onclick="closeVideoPreview()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);border-radius:9px;font-family:var(--font-body);font-size:0.9rem;padding:0.7rem 1.25rem;cursor:pointer;">Skip</button>
+    </div>
+    <div id="modalVideoLabel" style="font-size:0.75rem;color:rgba(255,255,255,0.4);"></div>
+  </div>
+
   <!-- History Drawer -->
   <div class="history-overlay" id="historyOverlay" onclick="closeHistoryOnBg(event)">
     <div class="history-drawer" id="historyDrawer">
@@ -2356,18 +2371,16 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
   function switchMediaTab(tab) {
     currentMediaTab = tab;
+    mediaShownCount = 9; // reset on tab switch
     var tabP = document.getElementById('tabPhotos');
     var tabV = document.getElementById('tabVideos');
-    var label = document.getElementById('mediaPickerLabel');
     if (tab === 'photos') {
       tabP.style.background = 'var(--surface2)'; tabP.style.color = 'var(--text)'; tabP.style.border = '0.5px solid var(--border-hover)';
       tabV.style.background = 'transparent'; tabV.style.color = 'var(--muted)'; tabV.style.border = 'none';
-      label.textContent = 'Select photos (tap to toggle)';
       renderImagePicker(allPhotos);
     } else {
       tabV.style.background = 'var(--surface2)'; tabV.style.color = 'var(--text)'; tabV.style.border = '0.5px solid var(--border-hover)';
       tabP.style.background = 'transparent'; tabP.style.color = 'var(--muted)'; tabP.style.border = 'none';
-      label.textContent = 'Select videos (tap to toggle)';
       renderVideoPicker(allVideos);
     }
   }
@@ -2566,30 +2579,59 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
         (isSelected ? '#64A0FF' : 'rgba(255,255,255,0.08)') +
         ';aspect-ratio:9/16;background:#000;transition:border-color .15s;';
 
+      // Thumbnail
       var thumb = document.createElement('img');
       thumb.src = v.thumb;
       thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;opacity:0.85;';
 
+      // Duration badge
       var badge = document.createElement('div');
-      badge.style.cssText = 'position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.6rem;padding:2px 5px;border-radius:4px;z-index:2;';
-      badge.textContent = '▶ ' + (v.duration || '?') + 's';
+      badge.style.cssText = 'position:absolute;bottom:32px;left:5px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.6rem;padding:2px 5px;border-radius:4px;z-index:2;';
+      badge.textContent = (v.duration || '?') + 's';
 
+      // Order badge (top-left)
       var orderBadge = document.createElement('div');
       orderBadge.style.cssText = 'position:absolute;top:4px;left:4px;width:22px;height:22px;background:#64A0FF;border-radius:50%;display:' +
         (isSelected ? 'flex' : 'none') +
         ';align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;z-index:2;';
       orderBadge.textContent = isSelected ? (orderIdx + 1) : '';
 
+      // Select checkbox (top-right) — click this to select/deselect
       var check = document.createElement('div');
-      check.style.cssText = 'position:absolute;bottom:5px;right:5px;width:22px;height:22px;background:' +
-        (isSelected ? '#64A0FF' : 'rgba(0,0,0,0.5)') +
-        ';border:1.5px solid ' + (isSelected ? '#64A0FF' : 'rgba(255,255,255,0.3)') +
-        ';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;z-index:2;transition:all .15s;';
+      check.title = 'Select this video';
+      check.style.cssText = 'position:absolute;top:5px;right:5px;width:24px;height:24px;background:' +
+        (isSelected ? '#64A0FF' : 'rgba(0,0,0,0.6)') +
+        ';border:1.5px solid ' + (isSelected ? '#64A0FF' : 'rgba(255,255,255,0.4)') +
+        ';border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;z-index:3;transition:all .15s;';
       check.innerHTML = isSelected ? '✓' : '';
 
-      wrap.appendChild(thumb); wrap.appendChild(badge); wrap.appendChild(orderBadge); wrap.appendChild(check);
+      // ▶ PLAY button (centre of card) — opens preview modal
+      var playBtn = document.createElement('div');
+      playBtn.title = 'Preview video';
+      playBtn.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;background:rgba(0,0,0,0);transition:background .2s;';
+      playBtn.innerHTML = '<div style="width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.6);border:2px solid rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;opacity:0;transition:opacity .2s;" id="playIcon_' + v.url.slice(-8) + '">▶</div>';
 
-      wrap.onclick = function() {
+      // Bottom action bar — Preview | Select
+      var actionBar = document.createElement('div');
+      actionBar.style.cssText = 'position:absolute;bottom:0;left:0;right:0;display:flex;z-index:3;';
+
+      var previewAction = document.createElement('button');
+      previewAction.style.cssText = 'flex:1;padding:0.35rem 0;background:rgba(0,0,0,0.75);border:none;border-top:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.85);font-size:0.68rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:background .15s;';
+      previewAction.textContent = '▶ Preview';
+
+      var selectAction = document.createElement('button');
+      selectAction.style.cssText = 'flex:1;padding:0.35rem 0;background:' + (isSelected ? 'rgba(100,160,255,0.8)' : 'rgba(0,0,0,0.75)') + ';border:none;border-top:1px solid rgba(255,255,255,0.1);border-left:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.68rem;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:background .15s;';
+      selectAction.textContent = isSelected ? '✓ Selected' : '+ Select';
+
+      // Preview click — open modal
+      previewAction.onclick = function(e) {
+        e.stopPropagation();
+        openVideoPreview(v.url, v.duration, videos);
+      };
+
+      // Select click — toggle selection
+      selectAction.onclick = function(e) {
+        e.stopPropagation();
         var selIdx = selectedVideoUrls.indexOf(v.url);
         if (selIdx !== -1) {
           selectedVideoUrls.splice(selIdx, 1);
@@ -2599,12 +2641,78 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
         renderVideoPicker(videos);
         updateSelectionCount();
       };
+
+      // Clicking the thumbnail itself also opens preview
+      wrap.onclick = function(e) {
+        if (e.target === previewAction || e.target === selectAction) return;
+        openVideoPreview(v.url, v.duration, videos);
+      };
+
+      actionBar.appendChild(previewAction);
+      actionBar.appendChild(selectAction);
+
+      wrap.appendChild(thumb);
+      wrap.appendChild(badge);
+      wrap.appendChild(orderBadge);
+      wrap.appendChild(check);
+      wrap.appendChild(playBtn);
+      wrap.appendChild(actionBar);
+
       grid.appendChild(wrap);
     });
 
     var btn = document.getElementById('loadMoreBtn');
     if (btn) btn.style.display = videos.length > mediaShownCount ? 'inline-block' : 'none';
 
+    updateSelectionCount();
+  }
+
+  // ── Video Preview Modal ──
+  var _previewVideoList = [];
+  var _previewCurrentUrl = '';
+
+  function openVideoPreview(url, duration, videoList) {
+    _previewCurrentUrl = url;
+    _previewVideoList = videoList || [];
+
+    var modal = document.getElementById('videoPreviewModal');
+    var videoEl = document.getElementById('modalVideoEl');
+    var label = document.getElementById('modalVideoLabel');
+    var selectBtn = document.getElementById('modalSelectBtn');
+
+    videoEl.src = url;
+    videoEl.load();
+    videoEl.play().catch(function(){});
+
+    var isAlreadySelected = selectedVideoUrls.indexOf(url) !== -1;
+    selectBtn.textContent = isAlreadySelected ? '✓ Already Selected' : '+ Select This Video';
+    selectBtn.style.background = isAlreadySelected ? 'rgba(100,160,255,0.5)' : 'var(--accent)';
+    selectBtn.style.color = isAlreadySelected ? '#fff' : '#060A12';
+
+    if (label) label.textContent = duration ? duration + ' second clip' : '';
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeVideoPreview() {
+    var modal = document.getElementById('videoPreviewModal');
+    var videoEl = document.getElementById('modalVideoEl');
+    videoEl.pause();
+    videoEl.src = '';
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function selectVideoFromModal() {
+    var url = _previewCurrentUrl;
+    if (!url) return;
+    var selIdx = selectedVideoUrls.indexOf(url);
+    if (selIdx === -1) {
+      selectedVideoUrls.push(url);
+    }
+    closeVideoPreview();
+    renderVideoPicker(_previewVideoList);
     updateSelectionCount();
   }
 
@@ -3390,6 +3498,17 @@ Return ONLY valid JSON, no markdown:
       console.warn('deleteVideo error:', e.message);
     }
   }
+
+  // Close video preview modal on backdrop click or Escape
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      if (document.getElementById('videoPreviewModal').style.display === 'flex') closeVideoPreview();
+      if (historyOpen) toggleHistory();
+    }
+  });
+  document.getElementById('videoPreviewModal').addEventListener('click', function(e){
+    if (e.target === this) closeVideoPreview();
+  });
 
   // ── Init voices on page load ──
   loadVoices();
