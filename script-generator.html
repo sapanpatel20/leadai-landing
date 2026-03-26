@@ -1283,38 +1283,68 @@ Book a free consultation at leadai.guru"
       <div class="style-grid">
         <div class="form-group">
           <label for="captionStyle">Caption Style</label>
-          <select id="captionStyle">
+          <select id="captionStyle" onchange="livePreview()">
             <option value="bold_yellow">Bold yellow — viral TikTok</option>
             <option value="bold_white">Bold white — clean</option>
             <option value="bold_green">Bold green — LeadAI brand</option>
             <option value="subtitle">Subtitle bar — news style</option>
+            <option value="none">None — no captions</option>
           </select>
         </div>
         <div class="form-group">
           <label for="videoSection">Script section</label>
-          <select id="videoSection">
+          <select id="videoSection" onchange="livePreview()">
             <option value="full">Full script</option>
             <option value="hook">Hook only</option>
             <option value="body">Body only</option>
             <option value="cta">CTA only</option>
+            <option value="none">None — visuals only</option>
           </select>
         </div>
         <div class="form-group">
           <label for="wordsPerFrame">Words per caption</label>
-          <select id="wordsPerFrame">
+          <select id="wordsPerFrame" onchange="livePreview()">
             <option value="3">3 words — fast paced</option>
             <option value="5" selected>5 words — balanced</option>
             <option value="8">8 words — slower</option>
+            <option value="none">None — no text</option>
           </select>
         </div>
         <div class="form-group">
           <label for="overlayOpacity">Image brightness</label>
-          <select id="overlayOpacity">
+          <select id="overlayOpacity" onchange="livePreview()">
+            <option value="0.0">No overlay — full image</option>
             <option value="0.15">Bright — image shows clearly</option>
             <option value="0.3" selected>Balanced — like TikTok</option>
             <option value="0.5">Dark — text pops more</option>
           </select>
         </div>
+      </div>
+
+      <!-- Speed + duration controls -->
+      <div class="style-grid" style="margin-top:0.5rem;">
+        <div class="form-group">
+          <label for="videoSpeed">Playback speed</label>
+          <select id="videoSpeed" onchange="livePreview()">
+            <option value="0.5">0.5× — slow, cinematic</option>
+            <option value="1.0" selected>1× — normal</option>
+            <option value="1.5">1.5× — faster</option>
+            <option value="2.0">2× — fast paced</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="frameHoldMs">Seconds per photo</label>
+          <select id="frameHoldMs" onchange="livePreview()">
+            <option value="1000">1 second</option>
+            <option value="2000" selected>2 seconds</option>
+            <option value="3000">3 seconds</option>
+            <option value="4000">4 seconds</option>
+            <option value="6000">6 seconds</option>
+          </select>
+        </div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted2);margin-top:0.35rem;margin-bottom:0.75rem;">
+        💡 Changes above update the preview canvas instantly — no need to regenerate.
       </div>
 
       <button class="btn-video" id="videoBtn" onclick="generateVideo()">
@@ -2242,6 +2272,71 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     else renderImagePicker(allPhotos);
   }
 
+  // Helper — count local/webcam media
+  function localSelectedCount() {
+    return (typeof getSelectedLocalMedia === 'function') ? getSelectedLocalMedia().length : 0;
+  }
+
+  // ── Live Preview — redraws canvas instantly when settings change ──
+  function livePreview() {
+    if (!videoFrames.length) return;
+    var canvas = document.getElementById('captionCanvas');
+    var capStyle = document.getElementById('captionStyle').value;
+    var overlay = parseFloat(document.getElementById('overlayOpacity').value) || 0.3;
+    var wpfVal = document.getElementById('wordsPerFrame').value;
+    var section = document.getElementById('videoSection').value;
+
+    // Update all frame settings
+    videoFrames.forEach(function(f) { f.cap = capStyle; f.overlay = overlay; });
+
+    // Rebuild text chunks if words-per-caption changed
+    if (wpfVal !== 'none' && section !== 'none' && lastScript && lastScript.trim()) {
+      var wpf = parseInt(wpfVal) || 5;
+      var text = getScriptSection(section) || lastScript;
+      var chunks = chunkText(text, wpf);
+      if (chunks.length) {
+        for (var i = 0; i < videoFrames.length; i++) {
+          videoFrames[i].text = chunks[Math.min(Math.floor(i * chunks.length / videoFrames.length), chunks.length-1)];
+        }
+      }
+    } else if (wpfVal === 'none' || section === 'none' || capStyle === 'none') {
+      videoFrames.forEach(function(f){ f.text = ''; });
+    }
+
+    // Redraw current frame as instant preview
+    var previewIdx = videoFrames.length > 1 ? Math.floor(videoFrames.length/2) : 0;
+    renderFrame(canvas, videoFrames[previewIdx]);
+  }
+
+  // ── Drag-to-reorder tray items ──
+  var _dragSrcIdx = -1;
+  function makeTrayItemDraggable(chip, idx) {
+    chip.draggable = true;
+    chip.style.cursor = 'grab';
+    chip.addEventListener('dragstart', function(e) {
+      _dragSrcIdx = idx;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function(){ chip.style.opacity = '0.4'; }, 0);
+    });
+    chip.addEventListener('dragend', function() { chip.style.opacity = '1'; });
+    chip.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      chip.style.outline = '2px solid var(--accent)';
+    });
+    chip.addEventListener('dragleave', function() { chip.style.outline = ''; });
+    chip.addEventListener('drop', function(e) {
+      e.preventDefault();
+      chip.style.outline = '';
+      if (_dragSrcIdx < 0 || _dragSrcIdx === idx) return;
+      var moved = selectedMedia.splice(_dragSrcIdx, 1)[0];
+      selectedMedia.splice(idx, 0, moved);
+      syncLegacyArrays();
+      renderTray();
+      if (videoFrames.length) livePreview();
+      _dragSrcIdx = -1;
+    });
+  }
+
   function renderTray() {
     var tray = document.getElementById('selectedTray');
     var items = document.getElementById('trayItems');
@@ -2293,6 +2388,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
       }; })(m.url);
 
       chip.appendChild(img); chip.appendChild(num); chip.appendChild(icon); chip.appendChild(del);
+      makeTrayItemDraggable(chip, idx);
       items.appendChild(chip);
     });
   }
@@ -3084,20 +3180,26 @@ Return ONLY valid JSON, no markdown:
   async function generateVideo() {
     var btn = document.getElementById('videoBtn');
     try {
-      // Check script exists
-      if (!lastScript || !lastScript.trim()) {
-        showVideoError('Please generate or paste a script first, then click Generate Video.');
-        return;
-      }
-
       var section  = document.getElementById('videoSection').value;
-      var capStyle = document.getElementById('captionStyle').value;
-      var wpf      = parseInt(document.getElementById('wordsPerFrame').value) || 5;
-      var overlay  = parseFloat(document.getElementById('overlayOpacity').value) || 0.5;
-      var text     = getScriptSection(section);
-      var chunks   = chunkText(text, wpf);
+      var capStyle = document.getElementById('captionStyle').value;  // may be 'none'
+      var wpfVal   = document.getElementById('wordsPerFrame').value;
+      var wpf      = wpfVal === 'none' ? 0 : (parseInt(wpfVal) || 5);
+      var overlay  = parseFloat(document.getElementById('overlayOpacity').value) || 0.3;
 
-      if (!chunks.length) { showVideoError('No text found for that section.'); return; }
+      // Script/caption are optional — if no script or none selected, generate visual-only
+      var text = '';
+      if (lastScript && lastScript.trim() && section !== 'none') {
+        text = getScriptSection(section) || lastScript;
+      }
+      var chunks;
+      if (!text.trim() || capStyle === 'none' || wpf === 0) {
+        // No captions mode — create one frame per selected media item (min 1)
+        var numItems = Math.max(selectedMedia.length, localSelectedCount(), 3);
+        chunks = Array(numItems).fill('');
+      } else {
+        chunks = chunkText(text, wpf);
+      }
+      if (!chunks.length) chunks = [''];
 
       btn.disabled = true;
       btn.textContent = '⏳ Building video...';
@@ -3135,17 +3237,21 @@ Return ONLY valid JSON, no markdown:
           mediaElements.push({ type: le.type, el: le.el });
         }
 
-      } else if (selectedVideoUrls.length > 0 || selectedImageUrls.length > 0) {
-        // Manually selected Pexels media
-        progressLabel.textContent = 'Loading selected media...';
-        if (selectedVideoUrls.length > 0) {
-          for (var ii = 0; ii < selectedVideoUrls.length; ii++) {
-            try { var v = await loadVideoElement(selectedVideoUrls[ii]); mediaElements.push({ type:'video', el:v }); } catch(e) {}
-          }
-        } else {
-          for (var ii = 0; ii < selectedImageUrls.length; ii++) {
-            try { var img = await loadImage(selectedImageUrls[ii]); mediaElements.push({ type:'image', el:img }); } catch(e) {}
-          }
+      } else if (selectedMedia.length > 0) {
+        // Use ALL selected media in order (photos + videos mixed, in user's chosen order)
+        progressLabel.textContent = 'Loading ' + selectedMedia.length + ' selected media items...';
+        for (var ii = 0; ii < selectedMedia.length; ii++) {
+          var sm = selectedMedia[ii];
+          try {
+            if (sm.type === 'video') {
+              var vel = await loadVideoElement(sm.url);
+              mediaElements.push({ type:'video', el:vel });
+            } else {
+              var iel = await loadImage(sm.url);
+              mediaElements.push({ type:'image', el:iel });
+            }
+          } catch(e) { console.warn('Failed to load media:', sm.url); }
+          progressBar.style.width = Math.round((ii+1)/selectedMedia.length * 30) + '%';
         }
 
       } else {
@@ -3176,18 +3282,12 @@ Return ONLY valid JSON, no markdown:
 
       for (var i = 0; i < chunks.length; i++) {
         var progress = (i + 1) / chunks.length;
-        // Scene-aware: if 3 media elements came from scene matching,
-        // split frames into thirds so HOOK/BODY/CTA each get matching visuals
-        var mediaIndex;
-        if (mediaElements.length === 3) {
-          mediaIndex = Math.min(Math.floor((i / chunks.length) * 3), 2);
-        } else {
-          mediaIndex = mediaElements.length > 0 ? i % mediaElements.length : -1;
-        }
+        // Always cycle through ALL selected media — never limit to 3
+        var mediaIndex = mediaElements.length > 0 ? i % mediaElements.length : -1;
         var media = (mediaIndex >= 0 && mediaElements[mediaIndex]) ? mediaElements[mediaIndex] : null;
-        var kenBurns = 1.0 + (0.08 * (i / Math.max(chunks.length - 1, 1)));
+        var kenBurns = 1.0 + (0.06 * (i % 10) / 9); // subtle zoom resets per item
         videoFrames.push({ text: chunks[i], media: media, progress: progress, cap: capStyle, overlay: overlay, kenBurns: kenBurns });
-        progressBar.style.width = Math.round(progress * 100) + '%';
+        progressBar.style.width = Math.round(30 + progress * 65) + '%';
         await new Promise(function(r){ setTimeout(r, 4); });
       }
 
@@ -3211,95 +3311,98 @@ Return ONLY valid JSON, no markdown:
     }
   }
 
+  var animRaf = null;
+  var animPaused = false;
+  var animPausedAt = 0; // for audio resume position
+
   function previewAnimation() {
     if (!videoFrames.length && !whisperCaptions.length) return;
-    var btn = document.querySelector('.btn-play-preview');
+    var btn = document.getElementById('previewBtn');
     var audio = document.getElementById('elAudio');
     var hasAudio = audio && audio.src && audio.src !== window.location.href;
 
-    // Stop if already playing
-    if (animInterval) {
-      clearInterval(animInterval);
-      animInterval = null;
+    var isPlaying = !!(animInterval || animRaf);
+
+    // ── PAUSE / STOP ──
+    if (isPlaying) {
+      if (animInterval) { clearInterval(animInterval); animInterval = null; }
       if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
-      if (audio) { audio.pause(); audio.currentTime = 0; }
-      if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+      if (audio) { animPausedAt = audio.currentTime; audio.pause(); }
+      animPaused = true;
+      if (btn) { btn.textContent = '▶ Resume'; btn.style.opacity = '1'; }
       return;
     }
 
+    // ── RESUME or START ──
+    animPaused = false;
     if (btn) { btn.textContent = '⏸ Pause'; btn.style.opacity = '0.85'; }
-
     var canvas = document.getElementById('captionCanvas');
+    var capStyle = document.getElementById('captionStyle').value;
+    var overlay = parseFloat(document.getElementById('overlayOpacity').value) || 0.3;
+    var speed = parseFloat(document.getElementById('videoSpeed')?.value || '1.0');
+    var frameHold = parseInt(document.getElementById('frameHoldMs')?.value || '2000');
 
-    // ── MODE A: Whisper captions — perfect word-sync ──
+    // ── MODE A: Whisper word-sync ──
     if (whisperCaptions.length && hasAudio) {
-      audio.currentTime = 0;
+      if (animPausedAt > 0) {
+        audio.currentTime = animPausedAt;
+      } else {
+        audio.currentTime = 0;
+      }
+      audio.playbackRate = speed;
       audio.play().catch(function(){});
 
       var caps = whisperCaptions;
-      var totalDur = audio.duration || caps[caps.length - 1].end;
+      var totalDur = (audio.duration || caps[caps.length-1].end) / speed;
       var capIdx = 0;
-
-      // Find the right media for rendering (use first videoFrame's media)
       var sampleFrame = videoFrames.length ? videoFrames[0] : null;
-      var capStyle = document.getElementById('captionStyle').value;
-      var overlay = parseFloat(document.getElementById('overlayOpacity').value) || 0.3;
 
       function tickWhisper() {
         if (!audio || audio.paused || audio.ended) {
-          if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
           animRaf = null;
+          if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+          animPausedAt = 0;
           return;
         }
         var now = audio.currentTime;
-        var progress = now / totalDur;
-
-        // Find which caption we should be showing
+        var progress = Math.min(now / Math.max(audio.duration, 1), 1);
+        while (capIdx < caps.length - 1 && now >= caps[capIdx + 1].start) capIdx++;
         var cap = caps[capIdx];
-        // Advance caption if we're past its end time
-        while (capIdx < caps.length - 1 && now >= caps[capIdx + 1].start) {
-          capIdx++;
-          cap = caps[capIdx];
-        }
-
-        // Render the frame with current caption and correct progress
-        if (sampleFrame && sampleFrame.media) {
-          drawFrameWithImage(canvas, cap.text, sampleFrame.media.el, progress, capStyle, overlay, 1.0);
+        var frameIdx = videoFrames.length > 0
+          ? Math.min(Math.floor(progress * videoFrames.length), videoFrames.length - 1)
+          : 0;
+        var frame = videoFrames[frameIdx] || sampleFrame;
+        if (frame && frame.media) {
+          drawFrameWithImage(canvas, capStyle !== 'none' ? cap.text : '', frame.media.el, progress, capStyle === 'none' ? 'bold_yellow' : capStyle, overlay, frame.kenBurns || 1.0);
         } else {
-          drawFrameNoImage(canvas, cap.text, progress, capStyle);
+          drawFrameNoImage(canvas, capStyle !== 'none' ? cap.text : '', progress, capStyle === 'none' ? 'bold_yellow' : capStyle);
         }
-
         animRaf = requestAnimationFrame(tickWhisper);
       }
-
       animRaf = requestAnimationFrame(tickWhisper);
-
       audio.onended = function() {
         if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
         if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+        animPausedAt = 0;
       };
       return;
     }
 
-    // ── MODE B: No Whisper — evenly spaced fallback ──
-    var msPerFrame;
-    if (hasAudio && audio.duration && isFinite(audio.duration)) {
-      msPerFrame = Math.min(4000, Math.max(800, (audio.duration * 1000) / videoFrames.length));
-    } else {
-      msPerFrame = 2000;
+    // ── MODE B: Frame-by-frame ──
+    var msPerFrame = frameHold / speed;
+    if (hasAudio) {
+      audio.currentTime = animPausedAt || 0;
+      audio.playbackRate = speed;
+      audio.play().catch(function(){});
     }
+    var i = animPausedAt > 0 && hasAudio && audio.duration
+      ? Math.floor((animPausedAt / audio.duration) * videoFrames.length)
+      : 0;
+    i = Math.min(i, videoFrames.length - 1);
 
-    if (hasAudio) { audio.currentTime = 0; audio.play().catch(function(){}); }
-
-    var i = 0;
-    renderFrame(canvas, videoFrames[0]);
+    renderFrame(canvas, videoFrames[i]);
     animInterval = setInterval(function() {
-      i++;
-      if (i >= videoFrames.length) {
-        clearInterval(animInterval); animInterval = null;
-        if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
-        return;
-      }
+      i = (i + 1) % videoFrames.length; // loop
       renderFrame(canvas, videoFrames[i]);
     }, msPerFrame);
 
@@ -3307,10 +3410,10 @@ Return ONLY valid JSON, no markdown:
       audio.onended = function() {
         if (animInterval) { clearInterval(animInterval); animInterval = null; }
         if (btn) { btn.textContent = '▶ Play with Voice'; btn.style.opacity = '1'; }
+        animPausedAt = 0;
       };
     }
   }
-  var animRaf = null;
 
   // ══════════════════════════════════════════════════
   // ══════════════════════════════════════════════════
