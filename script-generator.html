@@ -1688,7 +1688,7 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
 
     if (currentProvider === 'elevenlabs') {
       try {
-        var res = await fetch('/api/voice?list=true');
+        var res = await fetch('/api/voice?list=true&provider=elevenlabs');
         if (!res.ok) throw new Error('voices API ' + res.status);
         var data = await res.json();
         if (!data.voices || !data.voices.length) throw new Error('no voices');
@@ -1734,6 +1734,10 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
     // ── Voice API providers: Fish Audio · OpenAI TTS · ElevenLabs ──
     try {
       var voiceId = document.getElementById('voiceId').value;
+      if (currentProvider === 'elevenlabs' && !voiceId) {
+        throw new Error('Please select an ElevenLabs voice from the dropdown first.');
+      }
+      if (currentProvider === 'openai' && !voiceId) { voiceId = 'onyx'; }
       document.getElementById('voiceStatusText').textContent = 'Sending to ' +
         (currentProvider === 'openai' ? 'OpenAI TTS' :
          currentProvider === 'fish'   ? 'Fish Audio' : 'ElevenLabs') + '...';

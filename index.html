@@ -84,8 +84,10 @@
     .hero h1{font-family:var(--display);font-weight:800;
       font-size:clamp(2.8rem,6.5vw,5.2rem);letter-spacing:-.045em;line-height:1;
       margin-bottom:1.5rem;max-width:16ch;animation:up .7s .08s ease both}
-    .hero h1 mark{background:linear-gradient(135deg,var(--green) 0%,#00C87A 100%);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background:none}
+    .hero h1 mark{
+      background:linear-gradient(135deg,var(--green) 0%,#00C87A 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;color:var(--green)}
     .hero-sub{color:var(--d-muted);font-size:clamp(1rem,2vw,1.2rem);max-width:50ch;line-height:1.75;
       margin-bottom:2.5rem;animation:up .7s .16s ease both}
     .hero-ctas{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:center;animation:up .7s .24s ease both}
@@ -362,7 +364,7 @@
   .hero-right{flex:0 0 420px;min-width:280px}
   .hero-tag-pill{display:inline-block;background:rgba(0,217,126,0.12);border:1px solid rgba(0,217,126,0.28);color:var(--green);font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:.35rem 1rem;border-radius:6px;margin-bottom:1.5rem}
   .hero-2col h1{font-family:var(--display);font-weight:800;font-size:clamp(2.4rem,5vw,3.8rem);letter-spacing:-.045em;line-height:1.02;margin-bottom:1.25rem;color:var(--d-text)}
-  .hero-2col h1 mark{background:linear-gradient(135deg,var(--green) 0%,#00C87A 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background:none;color:var(--green)}
+  .hero-2col h1 mark{background:linear-gradient(135deg,var(--green) 0%,#00C87A 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;color:var(--green)}
   .hero-lead{color:var(--d-muted);font-size:1.1rem;line-height:1.72;margin-bottom:2rem;max-width:44ch}
   .hero-btn-row{display:flex;align-items:center;gap:.85rem;flex-wrap:wrap;margin-bottom:1.5rem}
   .btn-hero-primary{display:inline-flex;align-items:center;gap:.45rem;background:var(--green);color:#060A12;font-family:var(--body);font-weight:700;font-size:.97rem;padding:.85rem 2rem;border-radius:9px;text-decoration:none;transition:transform .2s,opacity .2s;letter-spacing:-.01em}
@@ -848,6 +850,8 @@ function lightBg(ctx,W,H){
    STEP CANVASES  — light background
 ══════════════════════════════════════ */
 
+document.addEventListener("DOMContentLoaded",function(){
+
 // SC1: Topic input form — LIGHT
 (function(){
   var c=document.getElementById('sc1');if(!c)return;
@@ -1075,6 +1079,5 @@ function lightBg(ctx,W,H){
   });
   track.innerHTML=html;
 })();
+});
 </script>
-</body>
-</html>
