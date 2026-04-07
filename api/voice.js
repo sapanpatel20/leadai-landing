@@ -47,18 +47,33 @@ export default async function handler(req, res) {
 
     // ElevenLabs voice list
     if (!process.env.ELEVENLABS_API_KEY) {
-      return res.status(500).json({ error: 'ELEVENLABS_API_KEY not set' });
+      // Return curated fallback — frontend shows preset voices with a note
+      return res.status(200).json({ voices: getElevenLabsFallback(), fallback: true });
     }
     try {
       const r = await fetch('https://api.elevenlabs.io/v1/voices', {
         headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY }
       });
-      if (!r.ok) return res.status(r.status).json({ error: await r.text() });
+      if (!r.ok) return res.status(200).json({ voices: getElevenLabsFallback(), fallback: true });
       const data = await r.json();
       return res.status(200).json({
         voices: data.voices.map(v => ({ id: v.voice_id, name: v.name, category: v.category || 'general' }))
       });
-    } catch (err) { return res.status(500).json({ error: err.message }); }
+    } catch (err) { return res.status(200).json({ voices: getElevenLabsFallback(), fallback: true }); }
+  }
+
+  function getElevenLabsFallback() {
+    return [
+      { id:'21m00Tcm4TlvDq8ikWAM', name:'Rachel', category:'premade' },
+      { id:'AZnzlk1XvdvUeBnXmlld', name:'Domi',   category:'premade' },
+      { id:'EXAVITQu4vr4xnSDxMaL', name:'Bella',  category:'premade' },
+      { id:'ErXwobaYiN019PkySvjV', name:'Antoni', category:'premade' },
+      { id:'MF3mGyEYCl7XYWbV9V6O', name:'Elli',   category:'premade' },
+      { id:'TxGEqnHWrfWFTfGW9XjX', name:'Josh',   category:'premade' },
+      { id:'VR6AewLTigWG4xSOukaG', name:'Arnold', category:'premade' },
+      { id:'pNInz6obpgDQGcFmaJgB', name:'Adam',   category:'premade' },
+      { id:'yoZ06aMxZJJ28mfd3POQ', name:'Sam',    category:'premade' },
+    ];
   }
 
   // Curated fallback voices — real IDs that work on fish.audio
