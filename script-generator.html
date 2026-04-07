@@ -1695,6 +1695,8 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
         select.innerHTML = '';
         var premade = data.voices.filter(function(v){ return v.category === 'premade'; });
         var cloned  = data.voices.filter(function(v){ return v.category !== 'premade'; });
+        // If ElevenLabs returns no premade (all cloned), show all together
+        if (!premade.length && !cloned.length) throw new Error('no voices returned');
         if (premade.length) {
           var g1 = document.createElement('optgroup'); g1.label = 'Premade Voices';
           premade.forEach(function(v){ var o=document.createElement('option'); o.value=v.id; o.textContent=v.name; g1.appendChild(o); });
@@ -1705,11 +1707,41 @@ Keep it energetic, specific, and optimized for ${platform} viewers. Do not add a
           cloned.forEach(function(v){ var o=document.createElement('option'); o.value=v.id; o.textContent=v.name; g2.appendChild(o); });
           select.appendChild(g2);
         }
+        // Use all voices if no premade/cloned split
+        if (!premade.length && !cloned.length) {
+          data.voices.forEach(function(v){ var o=document.createElement('option'); o.value=v.id; o.textContent=v.name; select.appendChild(o); });
+        }
       } catch(err) {
-        select.innerHTML = '<option value="">⚠ Check ELEVENLABS_API_KEY in Vercel</option>';
+        // Fallback: curated ElevenLabs voices with real IDs — always gives a working selection
+        var elFallback = [
+          { id:'21m00Tcm4TlvDq8ikWAM', name:'Rachel — calm, narration' },
+          { id:'AZnzlk1XvdvUeBnXmlld', name:'Domi — strong, expressive' },
+          { id:'EXAVITQu4vr4xnSDxMaL', name:'Bella — soft, pleasant' },
+          { id:'ErXwobaYiN019PkySvjV', name:'Antoni — warm, male' },
+          { id:'MF3mGyEYCl7XYWbV9V6O', name:'Elli — emotional, female' },
+          { id:'TxGEqnHWrfWFTfGW9XjX', name:'Josh — deep, male' },
+          { id:'VR6AewLTigWG4xSOukaG', name:'Arnold — crisp, male' },
+          { id:'pNInz6obpgDQGcFmaJgB', name:'Adam — narrative, male' },
+          { id:'yoZ06aMxZJJ28mfd3POQ', name:'Sam — confident, male' },
+        ];
+        select.innerHTML = '';
+        elFallback.forEach(function(v){
+          var o = document.createElement('option'); o.value = v.id; o.textContent = v.name;
+          select.appendChild(o);
+        });
+        // Show a note below the select
+        var old = document.getElementById('elFallbackNote');
+        if (old) old.remove();
+        var note = document.createElement('div');
+        note.id = 'elFallbackNote';
+        note.style.cssText = 'font-size:0.72rem;color:var(--muted2);margin-top:0.35rem;';
+        note.textContent = 'Using preset voices. Add ELEVENLABS_API_KEY to Vercel to see your own voices.';
+        select.parentNode.appendChild(note);
       }
+      return;
     }
-  }
+
+  } // end loadVoices
 
   // ══════════════════════════════════════════════════
   // GENERATE VOICE — routes to correct provider
