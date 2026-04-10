@@ -3841,39 +3841,64 @@ Return ONLY valid JSON, no markdown:
     var niche = customNiche || currentTrendNiche;
     if (!niche) return;
 
-    var btn = document.getElementById('findTrendBtn');
+    var btn    = document.getElementById('findTrendBtn');
     var status = document.getElementById('trendStatus');
-    var cardsEl = document.getElementById('trendCards');
-    var empty = document.getElementById('trendEmpty');
-
-    btn.disabled = true;
-    btn.textContent = '⏳ Scraping TikTok...';
-    status.textContent = 'Searching trending videos for "' + niche + '"...';
-    cardsEl.innerHTML = '';
+    var cardsEl= document.getElementById('trendCards');
     document.getElementById('trendRewriteWrap').classList.remove('visible');
+    btn.disabled = true;
+    cardsEl.innerHTML = '';
 
     try {
-      var res = await fetch('/api/trends?action=scrape', {
+      // Phase 1 — start the Apify run (returns in < 2s)
+      btn.textContent = '⏳ Starting scraper...';
+      status.textContent = 'Connecting to TikTok scraper...';
+
+      var r1 = await fetch('/api/trends?action=scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ niche: niche, count: 8, action: 'scrape' }),
+        body: JSON.stringify({ niche: niche, count: 8 }),
       });
-      var data = await res.json();
+      var d1 = await r1.json();
+      if (d1.error) throw new Error(d1.error);
+      var runId = d1.runId;
+      status.textContent = 'Scraping TikTok for "' + niche + '" — this takes 20-40 seconds...';
+      btn.textContent = '⏳ Scraping...';
 
-      if (data.error) throw new Error(data.error);
-      if (!data.videos || !data.videos.length) {
-        status.textContent = 'No trending videos found — try a different niche.';
-        cardsEl.innerHTML = '<div class="trend-empty">Try more specific terms like "real estate tips" or "gym transformation".</div>';
+      // Phase 2 — poll every 4 seconds until done (max 60s = 15 attempts)
+      var videos = null;
+      for (var attempt = 0; attempt < 15; attempt++) {
+        await new Promise(function(r){ setTimeout(r, 4000); });
+        var dots = '.'.repeat((attempt % 3) + 1);
+        status.textContent = 'Scraping TikTok' + dots + ' (' + ((attempt+1)*4) + 's)';
+
+        var r2 = await fetch('/api/trends?action=poll', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ runId: runId, count: 8 }),
+        });
+        var d2 = await r2.json();
+
+        if (d2.status === 'done') {
+          videos = d2.videos || [];
+          break;
+        }
+        if (d2.status === 'failed') throw new Error('Scraper failed: ' + (d2.error || 'unknown'));
+      }
+
+      if (!videos || !videos.length) {
+        status.textContent = 'No trending videos found for "' + niche + '" — try a broader term.';
+        cardsEl.innerHTML = '<div class="trend-empty">Try terms like "realestate", "fitness", "mortgage" or "coaching".</div>';
         return;
       }
 
-      status.textContent = 'Found ' + data.videos.length + ' trending videos. Click one to rewrite it for your business.';
-      renderTrendCards(data.videos, niche);
+      status.textContent = 'Found ' + videos.length + ' trending videos — click ✦ Rewrite to adapt one for your business.';
+      renderTrendCards(videos, niche);
 
     } catch(err) {
-      status.textContent = '⚠ ' + err.message;
       if (err.message.includes('APIFY_API_KEY') || err.message.includes('not set')) {
-        status.innerHTML = '⚠ APIFY_API_KEY not set — <a href="https://apify.com" target="_blank" style="color:var(--accent)">sign up free at apify.com</a>, get your API key, add it to Vercel → Environment Variables → APIFY_API_KEY, then redeploy.';
+        status.innerHTML = '⚠ Add APIFY_API_KEY to Vercel env vars. Sign up free at <a href="https://apify.com" target="_blank" style="color:var(--accent)">apify.com</a> → Settings → API Tokens → copy key → Vercel → Settings → Environment Variables → APIFY_API_KEY.';
+      } else {
+        status.textContent = '⚠ ' + err.message;
       }
     }
 
