@@ -129,7 +129,13 @@ export default async function handler(req, res) {
         headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'tts-1', input: text.slice(0, 4096), voice, response_format: 'mp3', speed: 1.0 }),
       });
-      if (!r.ok) return res.status(r.status).json({ error: await r.text() });
+      if (!r.ok) {
+        const errText = await r.text();
+        const errMsg = errText.includes('quota') ? 'ElevenLabs quota exceeded — check your plan at elevenlabs.io' :
+          errText.includes('invalid') ? 'Invalid ElevenLabs API key — check ELEVENLABS_API_KEY in Vercel' :
+          `ElevenLabs error ${r.status}: ${errText.slice(0,200)}`;
+        return res.status(r.status).json({ error: errMsg });
+      }
       const buf = await r.arrayBuffer();
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Length', buf.byteLength);
@@ -140,15 +146,21 @@ export default async function handler(req, res) {
 
   // ── ElevenLabs ──
   if (provider === 'elevenlabs') {
-    if (!process.env.ELEVENLABS_API_KEY) return res.status(500).json({ error: 'ELEVENLABS_API_KEY not set' });
-    if (!voiceId) return res.status(400).json({ error: 'voiceId required for ElevenLabs' });
+    if (!process.env.ELEVENLABS_API_KEY) return res.status(500).json({ error: 'ELEVENLABS_API_KEY not set in Vercel. Add it at vercel.com → Project → Settings → Environment Variables' });
+    const elVoiceId = voiceId || '21m00Tcm4TlvDq8ikWAM'; // Default to Rachel if none selected
     try {
-      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elVoiceId}`, {
         method: 'POST',
         headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
         body: JSON.stringify({ text, model_id: 'eleven_flash_v2_5', voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
       });
-      if (!r.ok) return res.status(r.status).json({ error: await r.text() });
+      if (!r.ok) {
+        const errText = await r.text();
+        const errMsg = errText.includes('quota') ? 'ElevenLabs quota exceeded — check your plan at elevenlabs.io' :
+          errText.includes('invalid') ? 'Invalid ElevenLabs API key — check ELEVENLABS_API_KEY in Vercel' :
+          `ElevenLabs error ${r.status}: ${errText.slice(0,200)}`;
+        return res.status(r.status).json({ error: errMsg });
+      }
       const buf = await r.arrayBuffer();
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Length', buf.byteLength);
